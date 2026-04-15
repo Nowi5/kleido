@@ -18,10 +18,10 @@ LDFLAGS     := -ldflags="-s -w -X main.version=$(VERSION)"
 # TEST_PKGS: packages in scope for unit tests.
 # Excludes packages that are either:
 #   - auto-generated (docs, web/components, *_templ.go)
-#   - integration-only and require Docker (internal/repository/postgres, redis)
+#   - integration-only and require Docker (internal/repository/**)
 #   - third-party code pulled in by npm (web/node_modules)
 TEST_PKGS := $(shell go list ./... | grep -Ev \
-	'/docs$$|/web/node_modules|/web/components$$|/internal/repository/postgres$$|/internal/repository/redis$$')
+	'/docs$$|/web/node_modules|/web/components$$|/internal/repository$$')
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 # build runs ui-build and templ-generate first so web/dist/ and *_templ.go files

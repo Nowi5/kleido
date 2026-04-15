@@ -73,7 +73,7 @@ func newE2EEnv(t *testing.T) *e2eEnv {
 			"POSTGRES_PASSWORD": "test",
 			"POSTGRES_DB":       "testdb",
 		},
-		WaitingFor: wait.ForExposedPort("5432").WithStartupTimeout(120 * time.Second),
+		WaitingFor: wait.ForExposedPort().WithStartupTimeout(120 * time.Second),
 	}
 	pgC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: pgReq,

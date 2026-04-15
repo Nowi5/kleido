@@ -1,87 +1,48 @@
-version: "2"
-
 run:
   timeout: 5m
-  go: "1.22"
 
-linters:
-  default: none
-  enable:
-    # Correctness
-    - errcheck
-    - govet
-    - staticcheck
-    - unused
-    - ineffassign
-
-    # Style & simplification (gosimple is part of staticcheck in v2)
-    - revive
-    - gocritic
-
-    # Security
-    - gosec
-
-    # Bugs
-    - bodyclose
-    - contextcheck
-    - noctx
-    - rowserrcheck
-    - copyloopvar
-
-    # Maintainability
-    - misspell
-    - wrapcheck
-    - prealloc
-
-  settings:
-    errcheck:
-      check-type-assertions: true
-      check-blank: true
-
-    govet:
-      enable:
-        - shadow
-
-    gosec:
-      excludes:
-        - G101
-        - G304
-
-    revive:
-      rules:
-        - name: exported
-        - name: error-return
-        - name: error-naming
-        - name: if-return
-        - name: increment-decrement
-        - name: var-naming
-        - name: package-comments
-
-    misspell:
-      locale: US
-
-    wrapcheck:
-      ignore-sigs:
-        - ".Errorf("
-        - "apperror."
-        - "errors.New("
-        - "errors.As("
-        - "errors.Is("
-
-    gocritic:
-      enabled-checks:
-        - appendAssign
-        - dupImport
-        - evalOrder
-        - initClause
-        - rangeValCopy
-        - sloppyLen
-        - truncateCmp
-        - unnecessaryBlock
-        - boolExprSimplify
-
-  exclusions:
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  govet:
+    enable:
+      - shadow
+  gosec:
+    excludes:
+      - G101
+      - G304
+  revive:
     rules:
+      - name: exported
+      - name: error-return
+      - name: error-naming
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: package-comments
+  misspell:
+    locale: US
+  wrapcheck:
+    ignoreSigs:
+      - ".Errorf("
+      - "apperror."
+      - "errors.New("
+      - "errors.As("
+      - "errors.Is("
+  gocritic:
+    enabled-checks:
+      - appendAssign
+      - dupImport
+      - evalOrder
+      - initClause
+      - rangeValCopy
+      - sloppyLen
+      - truncateCmp
+      - unnecessaryBlock
+      - boolExprSimplify
+  linters:
+    exclusions-rules:
       - path: "_test\\.go$"
         linters:
           - gosec
@@ -90,12 +51,36 @@ linters:
         linters:
           - wrapcheck
 
-formatters:
+linters:
+  disable-all: true
   enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - revive
+    - gosec
+    - bodyclose
+    - contextcheck
+    - copyloopvar
+    - gocritic
     - gofmt
     - goimports
+    - misspell
+    - rowserrcheck
+    - noctx
+    - prealloc
+    - wrapcheck
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  new: false
+  exclude-rules:
+    - path: "_test\\.go$"
+      linters:
+        - gosec
+        - wrapcheck
+    - path: "cmd/"
+      linters:
+        - wrapcheck

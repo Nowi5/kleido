@@ -32,7 +32,7 @@ func testDB(t *testing.T) string {
 			"POSTGRES_PASSWORD": "testpass",
 			"POSTGRES_DB":       "testdb",
 		},
-		WaitingFor: wait.ForExposedPort("5432").WithStartupTimeout(120 * time.Second),
+		WaitingFor: wait.ForExposedPort().WithStartupTimeout(120 * time.Second),
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
