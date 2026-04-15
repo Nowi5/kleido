@@ -1,0 +1,51 @@
+name: 'Go + UI Setup'
+description: >
+  Sets up Go, Node, builds the React UI, installs the templ CLI, and
+  generates *_templ.go files. Used by every job that needs to compile or
+  test Go code that embeds the UI.
+
+inputs:
+  go-version:
+    description: 'Go version (semver range)'
+    required: false
+    default: '1.25.x'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '20'
+  templ-version:
+    description: 'templ CLI version tag'
+    required: false
+    default: 'v0.2.778'
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+        cache: true
+
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: web/package-lock.json
+
+    - name: Install UI dependencies
+      shell: bash
+      run: cd web && npm ci
+
+    - name: Build UI
+      shell: bash
+      run: cd web && npm run build
+
+    - name: Install templ CLI
+      shell: bash
+      run: go install github.com/a-h/templ/cmd/templ@${{ inputs.templ-version }}
+
+    - name: Generate templ
+      shell: bash
+      run: templ generate ./web/components/...
