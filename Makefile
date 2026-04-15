@@ -64,17 +64,18 @@ test-ci:
 
 # test-coverage-check: enforce per-package coverage gates.
 # Fails the build if internal/service/ < 80% or pkg/apperror/ < 90%.
-# Excludes repository packages (integration-only) to avoid 0% dragging down the aggregate.
+# Excludes repository packages (integration-only).
 test-coverage-check:
-	go test -coverprofile=coverage.out $(TEST_PKGS)
-	@go tool cover -func=coverage.out | grep -v 'internal/repository' | awk ' \
-		/^kleido\/internal\/service\// { \
-			pct = $$NF+0; if (pct < 80) { \
-				printf "FAIL internal/service coverage %.1f%% < 80%%\n", pct; exit 1 } } \
-		/^kleido\/pkg\/apperror\// { \
-			pct = $$NF+0; if (pct < 90) { \
-				printf "FAIL pkg/apperror coverage %.1f%% < 90%%\n", pct; exit 1 } }' \
-		&& echo "✓ Coverage gates passed"
+	@go test -cover $(TEST_PKGS) 2>&1 | grep -E '^(ok|FAIL)\s+(kleido/internal/service|kleido/pkg/apperror)' | awk ' \
+		/^ok\s+kleido\/internal\/service/ { \
+			if (match($$0, /coverage:[[:space:]]+([0-9.]+)%/, m) && m[1] < 80) { \
+				printf "FAIL internal/service coverage %s%% < 80%%\n", m[1]; exit 1 } } \
+		/^ok\s+kleido\/pkg\/apperror/ { \
+			if (match($$0, /coverage:[[:space:]]+([0-9.]+)%/, m) && m[1] < 90) { \
+				printf "FAIL pkg/apperror coverage %s%% < 90%%\n", m[1]; exit 1 } } \
+		/^FAIL\s+kleido\/internal\/service/ { print "FAIL internal/service (tests failed)"; exit 1 } \
+		/^FAIL\s+kleido\/pkg\/apperror/ { print "FAIL pkg/apperror (tests failed)"; exit 1 }' \
+	&& echo "✓ Coverage gates passed"
 
 # ── Quality ───────────────────────────────────────────────────────────────────
 lint:

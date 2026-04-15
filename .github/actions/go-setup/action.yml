@@ -8,7 +8,7 @@ inputs:
   go-version:
     description: 'Go version (semver range)'
     required: false
-    default: '1.25.x'
+    default: '1.25.9'
   node-version:
     description: 'Node.js version'
     required: false
@@ -17,6 +17,10 @@ inputs:
     description: 'templ CLI version tag'
     required: false
     default: 'v0.2.778'
+  golangci-lint-version:
+    description: 'golangci-lint CLI version tag'
+    required: false
+    default: 'v2.11.4'
 
 runs:
   using: composite
@@ -47,6 +51,12 @@ runs:
       env:
         TEMPL_VERSION: ${{ inputs.templ-version }}
       run: go install "github.com/a-h/templ/cmd/templ@${TEMPL_VERSION}"
+
+    - name: Install golangci-lint CLI
+      shell: bash
+      env:
+        GCL_VERSION: ${{ inputs.golangci-lint-version }}
+      run: go install "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${GCL_VERSION}"
 
     - name: Generate templ
       shell: bash

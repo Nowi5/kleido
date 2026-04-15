@@ -25,6 +25,7 @@ The Go module is `kleido` (not `myapp`). All import paths start with `kleido/`.
 
 ## Lint & quality gates
 - `make lint` uses golangci-lint with config in `.golangci.yml`.
+- **golangci-lint version**: Defined in `.github/workflows/ci.yml` (`GOLANGCI_LINT_VERSION` env var) and `.github/actions/go-setup/action.yml` (`golangci-lint-version` input).
 - `wrapcheck` is configured but ignores `cmd/` — do not add wrapper errors in entry points.
 - Coverage gates (enforced in CI): `internal/service/` ≥ 80%, `pkg/apperror/` ≥ 90%.
 
