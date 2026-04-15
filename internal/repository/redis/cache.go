@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nowi5/kleido/internal/repository"
+	"kleido/internal/repository"
 	"github.com/redis/go-redis/v9"
 )
 

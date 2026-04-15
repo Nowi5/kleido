@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nowi5/kleido/pkg/configstore"
+	"kleido/pkg/configstore"
 )
 
 // isolate redirects the config dir to a temp directory for test isolation.

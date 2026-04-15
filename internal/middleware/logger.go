@@ -6,8 +6,8 @@ import (
 	"time"
 
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/nowi5/kleido/internal/logger"
-	"github.com/nowi5/kleido/internal/reqctx"
+	"kleido/internal/logger"
+	"kleido/internal/reqctx"
 )
 
 // RequestLogger returns a middleware that logs each request using the logger

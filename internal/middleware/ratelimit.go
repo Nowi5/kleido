@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/pkg/apperror"
 )
 
 // RateLimiter is the subset of SessionRepository used by the per-IP rate limit middleware.

@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nowi5/kleido/internal/auth"
-	"github.com/nowi5/kleido/internal/logger"
-	"github.com/nowi5/kleido/internal/middleware"
-	"github.com/nowi5/kleido/internal/service"
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/internal/auth"
+	"kleido/internal/logger"
+	"kleido/internal/middleware"
+	"kleido/internal/service"
+	"kleido/pkg/apperror"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 )

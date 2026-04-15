@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nowi5/kleido/internal/metrics"
-	"github.com/nowi5/kleido/internal/model"
-	"github.com/nowi5/kleido/internal/repository"
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/internal/metrics"
+	"kleido/internal/model"
+	"kleido/internal/repository"
+	"kleido/pkg/apperror"
 )
 
 // InstrumentedUserRepository wraps a UserRepository and records

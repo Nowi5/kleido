@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nowi5/kleido/internal/model"
-	"github.com/nowi5/kleido/internal/service"
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/internal/model"
+	"kleido/internal/service"
+	"kleido/pkg/apperror"
 	"github.com/redis/go-redis/v9"
 )
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nowi5/kleido/internal/logger"
+	"kleido/internal/logger"
 )
 
 // newTestLogger returns a logger that writes to the provided buffer instead of

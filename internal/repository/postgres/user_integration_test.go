@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nowi5/kleido/internal/config"
-	"github.com/nowi5/kleido/internal/model"
-	"github.com/nowi5/kleido/internal/repository/postgres"
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/internal/config"
+	"kleido/internal/model"
+	"kleido/internal/repository/postgres"
+	"kleido/pkg/apperror"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )

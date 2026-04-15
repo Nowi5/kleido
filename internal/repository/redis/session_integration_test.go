@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	redisrepo "github.com/nowi5/kleido/internal/repository/redis"
+	redisrepo "kleido/internal/repository/redis"
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"

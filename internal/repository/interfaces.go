@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nowi5/kleido/internal/model"
+	"kleido/internal/model"
 )
 
 // UserRepository defines the data-access contract for users.

@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nowi5/kleido/internal/client"
+	"kleido/internal/client"
 	"github.com/spf13/cobra"
 )
 

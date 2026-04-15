@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/nowi5/kleido/internal/client"
+	"kleido/internal/client"
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/yaml.v3"
 )

@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/nowi5/kleido/internal/middleware"
+	"kleido/internal/middleware"
 )
 
 func TestSecurityHeaders_ContentTypeOptions(t *testing.T) {

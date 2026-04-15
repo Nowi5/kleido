@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/nowi5/kleido/internal/handler"
-	"github.com/nowi5/kleido/internal/middleware"
-	"github.com/nowi5/kleido/internal/model"
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/internal/handler"
+	"kleido/internal/middleware"
+	"kleido/internal/model"
+	"kleido/pkg/apperror"
 )
 
 // --- Mock ---

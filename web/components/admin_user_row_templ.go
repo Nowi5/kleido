@@ -8,7 +8,7 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/nowi5/kleido/internal/model"
+import "kleido/internal/model"
 
 // AdminUserRow renders a single <tr> for the admin user table.
 // The hx-delete button fires a DELETE to /admin/users/{id} and removes the row on success.

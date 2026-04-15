@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/nowi5/kleido/internal/logger"
+	"kleido/internal/logger"
 )
 
 // EmailSender is the interface for sending transactional emails.

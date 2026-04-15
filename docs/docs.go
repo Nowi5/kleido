@@ -11,7 +11,7 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "contact": {
             "name": "API Support",
-            "url": "https://github.com/nowi5/kleido",
+            "url": "https://kleido",
             "email": "api@example.com"
         },
         "license": {

@@ -4,7 +4,8 @@
         migrate-up migrate-down migrate-create \
         gen-keys ui-build ui-install ui-dev \
         docker-build docker-up docker-down stack-smoke stack-down \
-        vuln-check scan clean
+        vuln-check scan clean \
+        hooks-install
 
 APP         := kleido
 BUILD_DIR   := ./bin
@@ -45,11 +46,13 @@ test-coverage:
 	go tool cover -func=coverage.out | tail -1
 	@echo "Open: coverage.html"
 
-# test-ci: run tests with gotestsum and emit JUnit XML for CI systems.
+# test-ci: run tests with gotestsum and emit JUnit XML + coverage profile for CI/Sonar.
 # Requires: go install gotest.tools/gotestsum@latest
+# Produces: reports/unit.xml (test execution) and coverage.out (coverage profile)
 test-ci:
 	@mkdir -p reports
-	gotestsum --junitfile reports/unit.xml --format pkgname -- -race -count=1 ./...
+	gotestsum --junitfile reports/unit.xml --format pkgname \
+		-- -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
 
 # test-coverage-check: enforce per-package coverage gates.
 # Fails the build if internal/service/ < 80% or pkg/apperror/ < 90%.
@@ -160,6 +163,14 @@ stack-smoke:
 
 stack-down:
 	docker-compose down -v
+
+# ── Git hooks ─────────────────────────────────────────────────────────────────
+# hooks-install: configure git to use the .githooks/ directory.
+# Run once after cloning: make hooks-install
+hooks-install:
+	git config core.hooksPath .githooks
+	chmod +x .githooks/*
+	@echo "✓ Git hooks installed from .githooks/"
 
 # ── Clean ─────────────────────────────────────────────────────────────────────
 clean:

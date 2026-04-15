@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nowi5/kleido/internal/metrics"
+	"kleido/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

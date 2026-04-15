@@ -18,6 +18,7 @@ type Config struct {
 	JWT      JWTConfig
 	API      APIConfig
 	OTel     OTelConfig
+	Seed     SeedConfig
 }
 
 // OTelConfig holds OpenTelemetry tracing settings (Sprint 6).
@@ -65,6 +66,12 @@ type APIConfig struct {
 	BaseURL string
 }
 
+// SeedConfig controls the bootstrap admin account created on first startup.
+type SeedConfig struct {
+	AdminEmail    string
+	AdminPassword string
+}
+
 // Load reads configuration from the environment (and optional .env file)
 // and returns a fully-populated *Config. It returns an error if any required
 // field is missing.
@@ -107,6 +114,10 @@ func Load() (*Config, error) {
 
 	// Defaults — API.
 	v.SetDefault("API_BASE_URL", "http://localhost:8080")
+
+	// Defaults — Seed.
+	v.SetDefault("SEED_ADMIN_EMAIL", "admin@kleido.local")
+	v.SetDefault("SEED_ADMIN_PASSWORD", "Admin1234!")
 
 	// Defaults — OpenTelemetry (Sprint 6).
 	v.SetDefault("OTEL_ENABLED", true)
@@ -165,6 +176,10 @@ func Load() (*Config, error) {
 		},
 		API: APIConfig{
 			BaseURL: v.GetString("API_BASE_URL"),
+		},
+		Seed: SeedConfig{
+			AdminEmail:    v.GetString("SEED_ADMIN_EMAIL"),
+			AdminPassword: v.GetString("SEED_ADMIN_PASSWORD"),
 		},
 		OTel: OTelConfig{
 			Enabled:  v.GetBool("OTEL_ENABLED"),

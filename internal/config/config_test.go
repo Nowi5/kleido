@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nowi5/kleido/internal/config"
+	"kleido/internal/config"
 )
 
 func TestLoad_MissingDatabaseURL(t *testing.T) {

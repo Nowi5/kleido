@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# pre-push hook: generates test execution report and coverage profile before push.
+# These are consumed by SonarCloud (sonar-project.properties).
+#
+# Install once with: make hooks-install
+# Skip for emergency pushes: git push --no-verify
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+# Verify gotestsum is available
+if ! command -v gotestsum &>/dev/null; then
+  echo "pre-push: gotestsum not found — run: go install gotest.tools/gotestsum@latest"
+  exit 1
+fi
+
+echo "pre-push: running tests and generating reports..."
+mkdir -p reports
+
+gotestsum --junitfile reports/unit.xml --format pkgname \
+  -- -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
+
+echo "pre-push: ✓ reports/unit.xml and coverage.out generated"

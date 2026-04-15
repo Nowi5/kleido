@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/nowi5/kleido/internal/auth"
+	"kleido/internal/auth"
 )
 
 // newTestService creates an in-memory JWTService with a freshly generated key.

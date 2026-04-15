@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/nowi5/kleido/internal/logger"
-	"github.com/nowi5/kleido/internal/metrics"
+	"kleido/internal/logger"
+	"kleido/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

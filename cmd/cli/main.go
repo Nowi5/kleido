@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nowi5/kleido/internal/cli"
+	"kleido/internal/cli"
 )
 
 // version is injected at build time via -ldflags "-X main.version=<tag>".

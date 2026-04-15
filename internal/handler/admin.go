@@ -7,11 +7,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/nowi5/kleido/internal/logger"
-	"github.com/nowi5/kleido/internal/middleware"
-	"github.com/nowi5/kleido/internal/service"
-	"github.com/nowi5/kleido/pkg/apperror"
-	"github.com/nowi5/kleido/web/components"
+	"kleido/internal/logger"
+	"kleido/internal/middleware"
+	"kleido/internal/service"
+	"kleido/pkg/apperror"
+	"kleido/web/components"
 )
 
 // AdminHandler handles server-rendered admin panel requests using templ + htmx.

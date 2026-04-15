@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/pkg/apperror"
 )
 
 // --- Constructor status codes ---

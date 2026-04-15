@@ -1,4 +1,4 @@
-module github.com/nowi5/kleido
+module kleido
 
 go 1.25.0
 

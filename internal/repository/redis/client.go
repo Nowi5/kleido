@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nowi5/kleido/internal/config"
+	"kleido/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 

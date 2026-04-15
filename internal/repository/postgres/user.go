@@ -9,9 +9,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nowi5/kleido/internal/model"
-	"github.com/nowi5/kleido/internal/repository"
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/internal/model"
+	"kleido/internal/repository"
+	"kleido/pkg/apperror"
 )
 
 // userRepository is the pgx-backed implementation of repository.UserRepository.

@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/nowi5/kleido/internal/model"
+	"kleido/internal/model"
 )
 
 // AdminUsers renders the full admin user-list page.

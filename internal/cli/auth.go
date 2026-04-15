@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nowi5/kleido/internal/client"
-	"github.com/nowi5/kleido/pkg/configstore"
+	"kleido/internal/client"
+	"kleido/pkg/configstore"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

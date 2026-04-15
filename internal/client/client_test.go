@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nowi5/kleido/internal/client"
+	"kleido/internal/client"
 )
 
 // writeJSON writes v as JSON with the given HTTP status code.

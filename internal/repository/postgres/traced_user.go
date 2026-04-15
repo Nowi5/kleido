@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/nowi5/kleido/internal/model"
-	"github.com/nowi5/kleido/internal/repository"
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/internal/model"
+	"kleido/internal/repository"
+	"kleido/pkg/apperror"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"

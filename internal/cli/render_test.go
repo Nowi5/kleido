@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nowi5/kleido/internal/client"
+	"kleido/internal/client"
 )
 
 var testUser = &client.UserResponse{

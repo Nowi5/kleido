@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nowi5/kleido/internal/auth"
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/internal/auth"
+	"kleido/pkg/apperror"
 )
 
 // ctxKey is the unexported type used for context keys in this package.

@@ -319,11 +319,68 @@ jobs:
         with:
           sarif_file: "trivy-results.sarif"
 
-  # ── 7. Build & push Docker image (main branch only) ───────────────────────
+  # ── 8. SonarCloud analysis ────────────────────────────────────────────────
+  sonar:
+    name: SonarCloud analysis
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history needed for accurate blame/new-code detection
+          fetch-depth: 0
+
+      - name: Download test reports
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-test-results
+          path: reports/
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install UI dependencies
+        run: cd web && npm ci
+
+      - name: Build UI
+        run: cd web && npm run build
+
+      - name: Install templ CLI
+        run: go install github.com/a-h/templ/cmd/templ@v0.2.778
+
+      - name: Generate templ
+        run: templ generate ./web/components/...
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Generate coverage profile
+        run: |
+          gotestsum --junitfile reports/unit.xml --format pkgname \
+            -- -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: SonarCloud scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ── 9. Build & push Docker image (main branch only) ───────────────────────
   docker:
     name: Docker build & push
     runs-on: ubuntu-latest
-    needs: [lint, swagger, build, test, e2e-test, security]
+    needs: [lint, swagger, build, test, e2e-test, security, sonar]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     permissions:

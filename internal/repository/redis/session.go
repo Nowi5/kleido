@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nowi5/kleido/internal/repository"
-	"github.com/nowi5/kleido/pkg/apperror"
+	"kleido/internal/repository"
+	"kleido/pkg/apperror"
 	"github.com/redis/go-redis/v9"
 )
 
