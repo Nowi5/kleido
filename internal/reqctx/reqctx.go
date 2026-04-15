@@ -16,7 +16,7 @@ func WithIP(ctx context.Context, ip string) context.Context {
 
 // IPFromContext returns the IP stored by WithIP, or "" if not set.
 func IPFromContext(ctx context.Context) string {
-	ip, _ := ctx.Value(ctxKeyIP{}).(string)
+	ip, _ := ctx.Value(ctxKeyIP{}).(string) //nolint:errcheck
 	return ip
 }
 
@@ -27,6 +27,6 @@ func WithUserAgent(ctx context.Context, ua string) context.Context {
 
 // UserAgentFromContext returns the User-Agent stored by WithUserAgent, or "" if not set.
 func UserAgentFromContext(ctx context.Context) string {
-	ua, _ := ctx.Value(ctxKeyUserAgent{}).(string)
+	ua, _ := ctx.Value(ctxKeyUserAgent{}).(string) //nolint:errcheck
 	return ua
 }

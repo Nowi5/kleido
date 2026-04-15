@@ -24,7 +24,7 @@ func writeTempPEM(t *testing.T, pemType string, derBytes []byte) string {
 	if err := pem.Encode(f, &pem.Block{Type: pemType, Bytes: derBytes}); err != nil {
 		t.Fatalf("pem.Encode: %v", err)
 	}
-	f.Close()
+	_ = f.Close() //nolint:errcheck
 	return path
 }
 
@@ -74,11 +74,8 @@ func TestLoadPrivateKey_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadPrivateKey: %v", err)
 	}
-	if got == nil {
-		t.Error("expected non-nil private key")
-	}
-	if got.N.Cmp(priv.N) != 0 {
-		t.Error("loaded private key modulus differs from original")
+	if got == nil || got.N.Cmp(priv.N) != 0 {
+		t.Error("expected non-nil private key with matching modulus")
 	}
 }
 
@@ -122,10 +119,7 @@ func TestLoadPublicKey_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadPublicKey: %v", err)
 	}
-	if got == nil {
-		t.Error("expected non-nil public key")
-	}
-	if got.N.Cmp(priv.PublicKey.N) != 0 {
-		t.Error("loaded public key modulus differs from original")
+	if got == nil || got.N.Cmp(priv.N) != 0 {
+		t.Error("expected non-nil public key with matching modulus")
 	}
 }

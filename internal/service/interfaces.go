@@ -6,8 +6,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"kleido/internal/model"
+
+	"github.com/google/uuid"
 )
 
 // UserService is the contract for user business logic.

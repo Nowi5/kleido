@@ -122,7 +122,7 @@ func (h *traceHandler) WithGroup(name string) slog.Handler {
 
 // WrapWithOTel wraps base with a handler that injects trace_id and span_id
 // from the active OTel span into every log record emitted via *Context methods.
-// Call this in main() after telemetry.Setup() has initialised the TracerProvider.
+// Call this in main() after telemetry.Setup() has initialized the TracerProvider.
 // Only call this when OTel is enabled — the trace injection is a no-op when no
 // span is active but adds a small overhead on every log call.
 func WrapWithOTel(base *slog.Logger, _ string) *slog.Logger {

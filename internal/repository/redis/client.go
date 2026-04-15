@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"kleido/internal/config"
+
 	"github.com/redis/go-redis/v9"
 )
 

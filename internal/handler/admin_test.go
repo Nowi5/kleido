@@ -8,11 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/uuid"
 	"kleido/internal/handler"
 	"kleido/internal/middleware"
 	"kleido/internal/model"
 	"kleido/pkg/apperror"
+
+	"github.com/google/uuid"
 )
 
 // --- Mock ---

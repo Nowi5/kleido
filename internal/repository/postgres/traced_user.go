@@ -3,10 +3,11 @@ package postgres
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"kleido/internal/model"
 	"kleido/internal/repository"
 	"kleido/pkg/apperror"
+
+	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"

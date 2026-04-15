@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"kleido/internal/logger"
 	"kleido/internal/reqctx"
+
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 // RequestLogger returns a middleware that logs each request using the logger

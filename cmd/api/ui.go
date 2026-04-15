@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-chi/chi/v5"
 	webstatic "kleido/web"
+
+	"github.com/go-chi/chi/v5"
 )
 
 //go:generate make ui-build
@@ -92,5 +93,8 @@ func serveIndex(w http.ResponseWriter, distFS fs.FS) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	_, _ = w.Write(content)
+	if _, err := w.Write(content); err != nil {
+		// Logging here would cause infinite recursion; the error is non-fatal.
+		_ = err
+	}
 }

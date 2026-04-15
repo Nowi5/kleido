@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"kleido/internal/model"
 	"kleido/internal/service"
 	"kleido/pkg/apperror"
+
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 

@@ -5,15 +5,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"kleido/internal/auth"
 	"kleido/internal/config"
 	"kleido/internal/handler"
 	"kleido/internal/middleware"
 	"kleido/internal/service"
+
+	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 )
@@ -64,7 +65,7 @@ func buildRouter(
 	userH := handler.NewUserHandler(userSvc)
 
 	// sessionRepo implements both RateLimiter and UserRateLimiter interfaces.
-	userLimiter, _ := limiter.(middleware.UserRateLimiter)
+	userLimiter, _ /*ok*/ := limiter.(middleware.UserRateLimiter) //nolint:errcheck
 
 	r.Route("/api/v1", func(r chi.Router) {
 		// Public auth endpoints — no JWT required.

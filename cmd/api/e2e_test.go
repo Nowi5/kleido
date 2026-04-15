@@ -196,8 +196,9 @@ PollDB:
 	// ── Config ──────────────────────────────────────────────────────────────
 	cfg := &config.Config{
 		App: config.AppConfig{
-			Env:         "test",
-			ServiceName: "e2e",
+			Env:                  "test",
+			ServiceName:          "e2e",
+			RegistrationEnabled:  true,
 		},
 	}
 

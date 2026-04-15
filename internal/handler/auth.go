@@ -12,6 +12,7 @@ import (
 	"kleido/internal/middleware"
 	"kleido/internal/service"
 	"kleido/pkg/apperror"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 )
@@ -280,8 +281,7 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Always returns nil — never reveals whether the email exists.
-	_ = h.svc.ForgotPassword(ctx, req.Email)
+	_ = h.svc.ForgotPassword(ctx, req.Email) //nolint:errcheck
 
 	span.SetStatus(codes.Ok, "")
 	w.Header().Set("Content-Type", "application/json")

@@ -8,12 +8,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"kleido/internal/handler"
 	"kleido/internal/middleware"
 	"kleido/internal/model"
 	"kleido/pkg/apperror"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 // --- Mock user service ---

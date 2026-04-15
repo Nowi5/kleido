@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -135,4 +136,199 @@ func TestLogout_Success(t *testing.T) {
 	if !strings.Contains(out.String(), "Logged out.") {
 		t.Errorf("expected 'Logged out.' in output, got: %q", out.String())
 	}
+}
+
+func TestAuthCmd_HasLoginAndLogout(t *testing.T) {
+	cmd := newAuthCmd()
+	if len(cmd.Commands()) != 2 {
+		t.Errorf("expected 2 subcommands, got %d", len(cmd.Commands()))
+	}
+	for _, sub := range []string{"login", "logout"} {
+		found := false
+		for _, c := range cmd.Commands() {
+			if c.Name() == sub {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected subcommand %q not found", sub)
+		}
+	}
+}
+
+func TestLogin_Success(t *testing.T) {
+	isolate(t)
+
+	var capturedReq *http.Request
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedReq = r
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		//nolint:errcheck
+		w.Write([]byte(`{"access_token":"tok-secret","expires_at":"2030-12-31T23:59:59Z"}`))
+	}))
+	defer srv.Close()
+
+	cmd := newAuthLoginCmd()
+	cmd.Flags().Set("api-url", srv.URL)
+
+	var stdin bytes.Buffer
+	stdin.WriteString("alice@example.com\n")
+	cmd.SetIn(&stdin)
+	t.Setenv("MYAPP_PASSWORD", "hunter2")
+
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("login: %v", err)
+	}
+
+	if !strings.Contains(out.String(), "Logged in successfully.") {
+		t.Errorf("expected success message, got: %q", out.String())
+	}
+
+	if capturedReq == nil {
+		t.Fatal("no request captured")
+	}
+	if capturedReq.Method != http.MethodPost {
+		t.Errorf("expected POST, got %s", capturedReq.Method)
+	}
+
+	cfg, err := checkAuth()
+	if err != nil {
+		t.Fatalf("checkAuth after login: %v", err)
+	}
+	if cfg.AccessToken != "tok-secret" {
+		t.Errorf("token: want %q, got %q", "tok-secret", cfg.AccessToken)
+	}
+}
+
+func TestLogin_APIError(t *testing.T) {
+	isolate(t)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		//nolint:errcheck
+		w.Write([]byte(`{"error":{"code":401,"message":"invalid credentials"}}`))
+	}))
+	defer srv.Close()
+
+	cmd := newAuthLoginCmd()
+	cmd.Flags().Set("api-url", srv.URL)
+
+	var stdin bytes.Buffer
+	stdin.WriteString("alice@example.com\n")
+	cmd.SetIn(&stdin)
+	t.Setenv("MYAPP_PASSWORD", "hunter2")
+
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected error for invalid credentials")
+	}
+	if !strings.Contains(err.Error(), "401") && !strings.Contains(err.Error(), "invalid credentials") {
+		t.Errorf("expected auth error, got: %v", err)
+	}
+}
+
+func TestLogin_EmailReadError(t *testing.T) {
+	isolate(t)
+
+	cmd := newAuthLoginCmd()
+
+	cmd.SetIn(&errReader{})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected error for email read failure")
+	}
+	if !strings.Contains(err.Error(), "read email") {
+		t.Errorf("expected 'read email' error, got: %v", err)
+	}
+}
+
+func TestLogin_ConfigSaveError(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", "/nonexistent/path/that/fails")
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		//nolint:errcheck
+		w.Write([]byte(`{"access_token":"tok","expires_at":"2030-12-31T23:59:59Z"}`))
+	}))
+	defer srv.Close()
+
+	cmd := newAuthLoginCmd()
+	cmd.Flags().Set("api-url", srv.URL)
+
+	var stdin bytes.Buffer
+	stdin.WriteString("alice@example.com\n")
+	cmd.SetIn(&stdin)
+	t.Setenv("MYAPP_PASSWORD", "hunter2")
+
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+
+	err := cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("expected error when config save fails")
+	}
+	if !strings.Contains(err.Error(), "save config") {
+		t.Errorf("expected 'save config' error, got: %v", err)
+	}
+}
+
+func TestLogin_WithEnvPassword(t *testing.T) {
+	isolate(t)
+
+	var capturedReq *http.Request
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedReq = r
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		//nolint:errcheck
+		w.Write([]byte(`{"access_token":"tok-env","expires_at":"2030-12-31T23:59:59Z"}`))
+	}))
+	defer srv.Close()
+
+	cmd := newAuthLoginCmd()
+	cmd.Flags().Set("api-url", srv.URL)
+
+	t.Setenv("MYAPP_PASSWORD", "env-password")
+
+	var stdin bytes.Buffer
+	stdin.WriteString("alice@example.com\n")
+	cmd.SetIn(&stdin)
+
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("login: %v", err)
+	}
+
+	if !strings.Contains(out.String(), "Logged in successfully.") {
+		t.Errorf("expected success message, got: %q", out.String())
+	}
+
+	if capturedReq == nil {
+		t.Fatal("no request captured")
+	}
+	if _, err := checkAuth(); err != nil {
+		t.Fatalf("checkAuth: %v", err)
+	}
+}
+
+type errReader struct{}
+
+func (errReader) Read(p []byte) (int, error) {
+	return 0, errors.New("simulated read error")
 }

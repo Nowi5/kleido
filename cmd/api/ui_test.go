@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -30,7 +31,7 @@ func TestRegisterUIRoutes_AssetsAreImmutable(t *testing.T) {
 	r := chi.NewRouter()
 	registerUIRoutesWithFS(r, testDistFS(t))
 
-	req := httptest.NewRequest(http.MethodGet, "/assets/main-abc123.js", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/assets/main-abc123.js", nil)
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
@@ -45,7 +46,7 @@ func TestRegisterUIRoutes_IndexIsNoStore(t *testing.T) {
 	r := chi.NewRouter()
 	registerUIRoutesWithFS(r, testDistFS(t))
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
@@ -61,7 +62,7 @@ func TestRegisterUIRoutes_UnknownPathServesIndex(t *testing.T) {
 	r := chi.NewRouter()
 	registerUIRoutesWithFS(r, testDistFS(t))
 
-	req := httptest.NewRequest(http.MethodGet, "/some/deep/spa-route", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/some/deep/spa-route", nil)
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
@@ -77,7 +78,7 @@ func TestRegisterUIRoutes_FaviconHasModerateCache(t *testing.T) {
 	r := chi.NewRouter()
 	registerUIRoutesWithFS(r, testDistFS(t))
 
-	req := httptest.NewRequest(http.MethodGet, "/favicon.ico", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/favicon.ico", nil)
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
@@ -98,7 +99,7 @@ func TestRegisterUIRoutes_APINotShadowed(t *testing.T) {
 	})
 	registerUIRoutesWithFS(r, testDistFS(t))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/healthz", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/healthz", nil)
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
@@ -114,7 +115,7 @@ func TestRegisterUIRoutes_MissingUIReturns503(t *testing.T) {
 	r := chi.NewRouter()
 	registerUIRoutesWithFS(r, emptyFS)
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 

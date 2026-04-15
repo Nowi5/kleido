@@ -20,6 +20,7 @@ import (
 
 	"kleido/internal/repository"
 	"kleido/pkg/apperror"
+
 	"github.com/redis/go-redis/v9"
 )
 

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"kleido/internal/metrics"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 

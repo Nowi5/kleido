@@ -7,12 +7,13 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/google/uuid"
 	"kleido/internal/logger"
 	"kleido/internal/metrics"
 	"kleido/internal/model"
 	"kleido/internal/repository"
 	"kleido/pkg/apperror"
+
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"

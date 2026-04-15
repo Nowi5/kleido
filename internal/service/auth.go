@@ -8,13 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"kleido/internal/auth"
 	"kleido/internal/logger"
 	"kleido/internal/model"
 	"kleido/internal/repository"
 	"kleido/internal/reqctx"
 	"kleido/pkg/apperror"
+
+	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"golang.org/x/crypto/bcrypt"
@@ -63,7 +64,7 @@ func (s *authService) Register(ctx context.Context, email, password string) (*mo
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		return nil, fmt.Errorf("register user: %w", err) //nolint:wrapcheck
 	}
 	span.SetStatus(codes.Ok, "")
 	return user, nil
@@ -124,9 +125,9 @@ func (s *authService) Login(ctx context.Context, email, password string) (*Token
 	}
 
 	// 4. Clear the failure counter on successful authentication.
-	if err := s.sessions.ClearLoginFailures(ctx, email); err != nil {
+	if clearErr := s.sessions.ClearLoginFailures(ctx, email); clearErr != nil {
 		// Non-fatal — proceed with login even if clearing fails.
-		log.WarnContext(ctx, "failed to clear login failure counter", slog.Any("error", err))
+		log.WarnContext(ctx, "failed to clear login failure counter", slog.Any("error", clearErr))
 	}
 
 	// 5. Issue tokens.

@@ -29,7 +29,7 @@ func seedAdminUser(ctx context.Context, cfg config.SeedConfig, userSvc service.U
 
 	// Any error other than "not found" is unexpected — log and bail out.
 	var appErr *apperror.AppError
-	if err != nil && !(errors.As(err, &appErr) && appErr.Code == 404) {
+	if err != nil && (!errors.As(err, &appErr) || appErr.Code != 404) {
 		log.Error("seed: failed to check for existing admin user", slog.Any("error", err))
 		return
 	}

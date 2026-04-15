@@ -12,12 +12,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"kleido/internal/auth"
 	"kleido/internal/logger"
 	"kleido/internal/model"
 	"kleido/internal/service"
 	"kleido/pkg/apperror"
+
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -88,9 +89,9 @@ type mockSessionRepo struct {
 	isLockedOutErr      error
 
 	// password reset
-	resetTokens         map[string]string // token → userID
-	consumeResetFn      func(token string) (string, error)
-	storeResetTokenErr  error
+	resetTokens        map[string]string // token → userID
+	consumeResetFn     func(token string) (string, error)
+	storeResetTokenErr error
 }
 
 func (m *mockSessionRepo) StoreRefreshToken(_ context.Context, token, userID string, _ time.Duration) error {

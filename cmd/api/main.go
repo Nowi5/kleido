@@ -58,7 +58,7 @@ func run() error {
 	// 2a. Background context used for OTel setup and pool creation.
 	ctx := context.Background()
 
-	// 2b. Initialise OpenTelemetry TracerProvider and wire shutdown.
+	// 2b. Initialize OpenTelemetry TracerProvider and wire shutdown.
 	otelShutdown, err := telemetry.Setup(
 		ctx,
 		cfg.App.ServiceName,

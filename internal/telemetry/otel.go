@@ -1,4 +1,4 @@
-// Package telemetry initialises the global OpenTelemetry TracerProvider and
+// Package telemetry initializes the global OpenTelemetry TracerProvider and
 // text-map propagator. It is the only place the SDK is wired up — all other
 // packages obtain a tracer via otel.Tracer("kleido/<package>").
 package telemetry
@@ -44,7 +44,7 @@ func (h *traceInjectingHandler) WithGroup(name string) slog.Handler {
 	return &traceInjectingHandler{Handler: h.Handler.WithGroup(name)}
 }
 
-// Setup initialises the global OTel TracerProvider and propagator.
+// Setup initializes the global OTel TracerProvider and propagator.
 // It returns a shutdown function that must be deferred in main().
 //
 // When enabled is false, the no-op default provider is kept and a no-op
@@ -53,7 +53,7 @@ func (h *traceInjectingHandler) WithGroup(name string) slog.Handler {
 // Sampler policy:
 //   - "development": AlwaysSample — every span is recorded for local debugging.
 //   - anything else: ParentBased(TraceIDRatioBased(0.1)) — 10 % head sampling in
-//     staging/production, honouring upstream sampling decisions via W3C traceparent.
+//     staging/production, honoring upstream sampling decisions via W3C traceparent.
 func Setup(ctx context.Context, serviceName, version, endpoint, env string, enabled bool) (shutdown func(context.Context) error, err error) {
 	if !enabled {
 		otel.SetTracerProvider(otel.GetTracerProvider()) // keep no-op default
@@ -112,7 +112,7 @@ func Setup(ctx context.Context, serviceName, version, endpoint, env string, enab
 
 // NewSlogHandler wraps base with a handler that injects trace_id and span_id
 // from the active OTel span into every log record emitted via *Context methods.
-// Call this in main() after Setup() has initialised the TracerProvider.
+// Call this in main() after Setup() has initialized the TracerProvider.
 func NewSlogHandler(base slog.Handler, _ string) slog.Handler {
 	return &traceInjectingHandler{Handler: base}
 }

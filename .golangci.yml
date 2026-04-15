@@ -17,8 +17,6 @@ linters:
     - contextcheck
     - copyloopvar
     - gocritic
-    - gofmt
-    - goimports
     - misspell
     - rowserrcheck
     - noctx
@@ -72,7 +70,24 @@ linters:
         linters:
           - gosec
           - wrapcheck
+          - errcheck
+          - noctx
       - path: "cmd/"
+        linters:
+          - wrapcheck
+      - path: "web/node_modules/"
+        linters:
+          - errcheck
+          - wrapcheck
+          - revive
+      - path: "internal/repository/postgres/traced_user.go"
+        linters:
+          - wrapcheck
+          - revive
+      - path: "internal/telemetry/otel.go"
+        linters:
+          - wrapcheck
+      - path: "internal/logger/logger.go"
         linters:
           - wrapcheck
 

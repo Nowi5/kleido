@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"kleido/internal/auth"
 	"kleido/internal/middleware"
+
+	"github.com/google/uuid"
 )
 
 // fakeChecker implements middleware.SessionChecker for tests.

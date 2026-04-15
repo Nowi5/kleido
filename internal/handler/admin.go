@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"kleido/internal/logger"
 	"kleido/internal/middleware"
 	"kleido/internal/service"
 	"kleido/pkg/apperror"
 	"kleido/web/components"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 // AdminHandler handles server-rendered admin panel requests using templ + htmx.
@@ -41,15 +42,12 @@ func (h *AdminHandler) UserList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	if r.Header.Get("HX-Request") == "true" {
-		// htmx partial — return only the updated <tbody> rows.
-		_ = components.AdminUsersTableBody(users).Render(ctx, w)
+		_ = components.AdminUsersTableBody(users).Render(ctx, w) //nolint:errcheck
 		return
 	}
 
-	// Full-page render — include the Bearer token so htmx can attach it to
-	// subsequent DELETE requests made from the admin table.
 	token := extractBearerToken(r)
-	_ = components.AdminUsers(users, total, token).Render(ctx, w)
+	_ = components.AdminUsers(users, total, token).Render(ctx, w) //nolint:errcheck
 }
 
 // UserDelete handles the htmx DELETE request from the admin table.
@@ -67,7 +65,7 @@ func (h *AdminHandler) UserDelete(w http.ResponseWriter, r *http.Request) {
 
 	// callerRole is set by JWT middleware; always "admin" here because the route
 	// group uses RequireRole("admin"). Captured for audit logging.
-	callerRole, _ := ctx.Value(middleware.CtxKeyRole).(string)
+	callerRole, _ := ctx.Value(middleware.CtxKeyRole).(string) //nolint:errcheck
 
 	if err := h.userSvc.Delete(ctx, id); err != nil {
 		log.ErrorContext(ctx, "admin delete failed",

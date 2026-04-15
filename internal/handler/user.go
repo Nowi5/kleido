@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"kleido/internal/logger"
 	"kleido/internal/middleware"
 	"kleido/internal/model"
 	"kleido/internal/service"
 	"kleido/pkg/apperror"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"

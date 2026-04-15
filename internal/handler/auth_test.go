@@ -12,12 +12,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"kleido/internal/auth"
 	"kleido/internal/handler"
 	"kleido/internal/model"
 	"kleido/internal/service"
 	"kleido/pkg/apperror"
+
+	"github.com/google/uuid"
 )
 
 // --- Mocks ---

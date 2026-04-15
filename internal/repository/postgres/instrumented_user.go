@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"kleido/internal/metrics"
 	"kleido/internal/model"
 	"kleido/internal/repository"
 	"kleido/pkg/apperror"
+
+	"github.com/google/uuid"
 )
 
 // InstrumentedUserRepository wraps a UserRepository and records
