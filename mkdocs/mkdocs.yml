@@ -68,6 +68,7 @@ nav:
   - API Reference:
       - Swagger UI: swagger.md
       - Auth & Users: auth-users.md
+      - Multi-Tenancy: multi-tenancy.md
   - Observability:
       - Jaeger — Distributed Tracing: jaeger.md
       - Prometheus — Metrics: prometheus.md

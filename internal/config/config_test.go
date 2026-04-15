@@ -94,3 +94,18 @@ func TestLoad_DefaultDatabaseMaxConns_WhenNotSet(t *testing.T) {
 		t.Errorf("Database.MaxConns default: want 25, got %d", cfg.Database.MaxConns)
 	}
 }
+
+func TestLoad_InvalidAppEnv(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/myapp?sslmode=disable")
+	t.Setenv("JWT_PRIVATE_KEY_PATH", "./keys/private.pem")
+	t.Setenv("JWT_PUBLIC_KEY_PATH", "./keys/public.pem")
+	t.Setenv("APP_ENV", "invalid_env")
+
+	_, err := config.Load()
+	if err == nil {
+		t.Fatal("expected an error for invalid APP_ENV, got nil")
+	}
+	if !strings.Contains(err.Error(), "APP_ENV") {
+		t.Errorf("error message should mention APP_ENV, got: %q", err.Error())
+	}
+}

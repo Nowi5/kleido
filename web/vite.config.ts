@@ -9,6 +9,18 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     passWithNoTests: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['lcov', 'text'],
+      reportsDirectory: 'coverage',
+      exclude: [
+        'node_modules/**',
+        'dist/**',
+        '*.config.*',
+        '**/*.d.ts',
+        'coverage/**',
+      ],
+    },
   },
   build: {
     outDir: 'dist',

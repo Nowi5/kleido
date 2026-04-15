@@ -4,10 +4,14 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"time"
 
 	"kleido/internal/config"
+	"kleido/internal/model"
 	"kleido/internal/service"
 	"kleido/pkg/apperror"
+
+	"github.com/google/uuid"
 )
 
 // seedAdminUser ensures at least one admin account exists in the database.
@@ -43,5 +47,42 @@ func seedAdminUser(ctx context.Context, cfg config.SeedConfig, userSvc service.U
 	log.Info("seed: admin user created",
 		slog.String("email", user.Email),
 		slog.String("user_id", user.ID.String()),
+	)
+}
+
+// seedDefaultTenant ensures a default tenant exists in the database.
+// It is idempotent: if a tenant with slug "default" already exists,
+// the function returns immediately without modifying anything.
+func seedDefaultTenant(ctx context.Context, tenantSvc service.TenantService, log *slog.Logger) {
+	existing, err := tenantSvc.GetBySlug(ctx, "default")
+	if err == nil && existing != nil {
+		log.Info("seed: default tenant already exists, skipping")
+		return
+	}
+
+	var appErr *apperror.AppError
+	if err != nil && (!errors.As(err, &appErr) || appErr.Code != 404) {
+		log.Error("seed: failed to check for existing tenant", slog.Any("error", err))
+		return
+	}
+
+	tenant := &model.Tenant{
+		ID:        uuid.New(),
+		Name:      "Default Organization",
+		Slug:      "default",
+		Settings:  map[string]interface{}{},
+		IsActive:  true,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := tenantSvc.Create(ctx, tenant); err != nil {
+		log.Error("seed: failed to create default tenant", slog.Any("error", err))
+		return
+	}
+
+	log.Info("seed: default tenant created",
+		slog.String("tenant_id", tenant.ID.String()),
+		slog.String("slug", tenant.Slug),
 	)
 }
