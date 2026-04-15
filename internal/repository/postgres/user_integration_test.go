@@ -301,3 +301,142 @@ func TestDelete_SoftDelete(t *testing.T) {
 // postgres_internal_pool is a placeholder type used only to make the file
 // compile; the real pool is obtained from postgres.NewPool in each test.
 type postgres_internal_pool struct{ dsn string }
+
+func TestUpdate(t *testing.T) {
+	dsn := testDB(t)
+	ctx := context.Background()
+
+	cfg := config.DatabaseConfig{
+		URL:                    dsn,
+		MaxConns:               5,
+		MinConns:               1,
+		MaxConnLifetimeMinutes: 5,
+	}
+
+	pool, err := postgres.NewPool(ctx, cfg)
+	if err != nil {
+		t.Fatalf("new pool: %v", err)
+	}
+	defer pool.Close()
+
+	repo := postgres.NewUserRepository(pool)
+
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        fmt.Sprintf("update-test-%s@test.com", uuid.New()),
+		PasswordHash: "$2a$10$oldhash",
+		Role:         "user",
+		IsActive:     true,
+		CreatedAt:    time.Now().UTC(),
+		UpdatedAt:    time.Now().UTC(),
+	}
+
+	if err := repo.Create(ctx, user); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	user.Role = "admin"
+	user.Email = fmt.Sprintf("updated-%s@test.com", uuid.New())
+
+	if err := repo.Update(ctx, user); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	got, err := repo.FindByID(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("FindByID after update: %v", err)
+	}
+
+	if got.Role != "admin" {
+		t.Errorf("Role: want %q, got %q", "admin", got.Role)
+	}
+	if got.Email != user.Email {
+		t.Errorf("Email: want %q, got %q", user.Email, got.Email)
+	}
+	if got.IsActive != true {
+		t.Errorf("IsActive: want true, got %v", got.IsActive)
+	}
+}
+
+func TestUpdatePassword(t *testing.T) {
+	dsn := testDB(t)
+	ctx := context.Background()
+
+	cfg := config.DatabaseConfig{
+		URL:                    dsn,
+		MaxConns:               5,
+		MinConns:               1,
+		MaxConnLifetimeMinutes: 5,
+	}
+
+	pool, err := postgres.NewPool(ctx, cfg)
+	if err != nil {
+		t.Fatalf("new pool: %v", err)
+	}
+	defer pool.Close()
+
+	repo := postgres.NewUserRepository(pool)
+
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        fmt.Sprintf("pw-update-%s@test.com", uuid.New()),
+		PasswordHash: "$2a$10$oldhash",
+		Role:         "user",
+		IsActive:     true,
+		CreatedAt:    time.Now().UTC(),
+		UpdatedAt:    time.Now().UTC(),
+	}
+
+	if err := repo.Create(ctx, user); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	newHash := "$2a$10$newpasswordhash"
+	if err := repo.UpdatePassword(ctx, user.ID, newHash); err != nil {
+		t.Fatalf("UpdatePassword: %v", err)
+	}
+
+	got, err := repo.FindByEmail(ctx, user.Email)
+	if err != nil {
+		t.Fatalf("FindByEmail after password update: %v", err)
+	}
+
+	if got.PasswordHash != newHash {
+		t.Errorf("PasswordHash: want %q, got %q", newHash, got.PasswordHash)
+	}
+}
+
+func TestUpdate_NotFound(t *testing.T) {
+	dsn := testDB(t)
+	ctx := context.Background()
+
+	cfg := config.DatabaseConfig{
+		URL:                    dsn,
+		MaxConns:               5,
+		MinConns:               1,
+		MaxConnLifetimeMinutes: 5,
+	}
+
+	pool, err := postgres.NewPool(ctx, cfg)
+	if err != nil {
+		t.Fatalf("new pool: %v", err)
+	}
+	defer pool.Close()
+
+	repo := postgres.NewUserRepository(pool)
+
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        fmt.Sprintf("ghost-%s@test.com", uuid.New()),
+		PasswordHash: "$2a$10$somehash",
+		Role:         "user",
+		IsActive:     true,
+		CreatedAt:    time.Now().UTC(),
+		UpdatedAt:    time.Now().UTC(),
+	}
+
+	err = repo.Update(ctx, user)
+	if err != nil {
+		t.Errorf("Update on non-existent user should not return error (no rows affected), got: %v", err)
+	}
+}

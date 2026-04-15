@@ -72,6 +72,16 @@ type SeedConfig struct {
 	AdminPassword string
 }
 
+var validEnvs = map[string]bool{
+	"development": true,
+	"staging":    true,
+	"production": true,
+}
+
+func isValidEnv(env string) bool {
+	return validEnvs[env]
+}
+
 // Load reads configuration from the environment (and optional .env file)
 // and returns a fully-populated *Config. It returns an error if any required
 // field is missing.
@@ -126,6 +136,11 @@ func Load() (*Config, error) {
 	// Validate required fields.
 	var errs []string
 
+	appEnv := v.GetString("APP_ENV")
+	if !isValidEnv(appEnv) {
+		errs = append(errs, "APP_ENV must be one of: development, staging, production")
+	}
+
 	databaseURL := v.GetString("DATABASE_URL")
 	if databaseURL == "" {
 		errs = append(errs, "DATABASE_URL is required but not set")
@@ -149,7 +164,7 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		App: AppConfig{
-			Env:                 v.GetString("APP_ENV"),
+			Env:                 appEnv,
 			Port:                v.GetInt("APP_PORT"),
 			LogLevel:            v.GetString("APP_LOG_LEVEL"),
 			Version:             v.GetString("APP_VERSION"),
