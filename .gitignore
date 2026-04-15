@@ -8,8 +8,8 @@ web/.env.development.local
 web/.env.test.local
 web/.env.production.local
 bin/
-api
-api.exe
+/api
+/api.exe
 coverage.out
 coverage.html
 *.test
