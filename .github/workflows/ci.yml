@@ -31,6 +31,12 @@ jobs:
         with:
           version: v1.64
 
+      - name: TypeScript type check
+        run: cd web && npm run type-check
+
+      - name: ESLint
+        run: cd web && npm run lint
+
   # ── 2. Swagger docs up-to-date ────────────────────────────────────────────
   swagger:
     name: Swagger docs up to date
@@ -125,13 +131,13 @@ jobs:
         run: make test-coverage-check
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: nowi5/kleido
           files: coverage.out
           flags: unit
           fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   # ── 5. Integration tests ───────────────────────────────────────────────────
   integration-test:
