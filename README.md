@@ -4,6 +4,7 @@
 [![Coverage](https://codecov.io/gh/nowi5/kleido/branch/main/graph/badge.svg)](https://codecov.io/gh/nowi5/kleido)
 ![Go Version](https://img.shields.io/badge/Go-1.25+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Nowi5_kleido&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Nowi5_kleido)
 
 Kleido is a production-grade REST API backend written in Go — it provides secure user authentication (RS256 JWT, bcrypt, Redis session management), a clean layered architecture (handler → service → repository), and a full operational foundation (structured logging, health probes, graceful shutdown, golangci-lint, gosec).
 

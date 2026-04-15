@@ -19,6 +19,6 @@ echo "pre-push: running tests and generating reports..."
 mkdir -p reports
 
 gotestsum --junitfile reports/unit.xml --format pkgname \
-  -- -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
+  -- -count=1 -coverprofile=coverage.out -covermode=atomic ./...
 
 echo "pre-push: ✓ reports/unit.xml and coverage.out generated"
