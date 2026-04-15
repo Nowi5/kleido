@@ -123,6 +123,7 @@ func run() error {
 			repopostgres.NewUserRepository(pool),
 		),
 	)
+	tenantRepo := repopostgres.NewTenantRepository(pool)
 	sessionRepo := reporedis.NewSessionRepo(rdb)
 	cacheRepo := reporedis.NewCacheRepo(rdb)
 
@@ -131,14 +132,16 @@ func run() error {
 
 	// 9. Construct application services.
 	userSvc := service.NewUserService(userRepo, cacheRepo, log)
+	tenantSvc := service.NewTenantService(tenantRepo)
 	authSvc := service.NewAuthService(userSvc, sessionRepo, jwtSvc, log,
 		&service.StubEmailSender{}, cfg.API.BaseURL)
 
 	// 10. Seed initial data (idempotent — skipped if admin already exists).
 	seedAdminUser(ctx, cfg.Seed, userSvc, log)
+	seedDefaultTenant(ctx, tenantSvc, log)
 
 	// 11. Build router (passes cfg so it can check APP_ENV for Swagger UI).
-	router := buildRouter(pool, rdb, cfg, log, jwtSvc, authSvc, userSvc, sessionRepo, sessionRepo)
+	router := buildRouter(pool, rdb, cfg, log, jwtSvc, authSvc, userSvc, tenantSvc, sessionRepo, sessionRepo)
 
 	// 12. Configure HTTP server.
 	srv := &http.Server{

@@ -9,13 +9,14 @@ import (
 
 // User is the persistent domain entity for an application user.
 type User struct {
-	ID           uuid.UUID `db:"id"            json:"id"`
-	Email        string    `db:"email"         json:"email"`
-	PasswordHash string    `db:"password_hash" json:"-"`
-	Role         string    `db:"role"          json:"role"`
-	IsActive     bool      `db:"is_active"     json:"is_active"`
-	CreatedAt    time.Time `db:"created_at"    json:"created_at"`
-	UpdatedAt    time.Time `db:"updated_at"    json:"updated_at"`
+	ID           uuid.UUID  `db:"id"            json:"id"`
+	TenantID     *uuid.UUID `db:"tenant_id"     json:"tenant_id,omitempty"`
+	Email        string     `db:"email"         json:"email"`
+	PasswordHash string     `db:"password_hash" json:"-"`
+	Role         string     `db:"role"          json:"role"`
+	IsActive     bool       `db:"is_active"     json:"is_active"`
+	CreatedAt    time.Time  `db:"created_at"    json:"created_at"`
+	UpdatedAt    time.Time  `db:"updated_at"    json:"updated_at"`
 }
 
 // UserResponse is the safe public shape — no password hash, used in handlers.

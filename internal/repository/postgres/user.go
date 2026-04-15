@@ -29,11 +29,12 @@ func NewUserRepository(pool *pgxpool.Pool) repository.UserRepository {
 // Create inserts a new user row. The user.ID must already be set by the caller.
 func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 	const q = `
-		INSERT INTO users (id, email, password_hash, role, is_active, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`
+		INSERT INTO users (id, tenant_id, email, password_hash, role, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
 	_, err := r.pool.Exec(ctx, q,
 		user.ID,
+		user.TenantID,
 		user.Email,
 		user.PasswordHash,
 		user.Role,
@@ -55,7 +56,7 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 // Returns apperror.NotFound("user") when the row does not exist.
 func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	const q = `
-		SELECT id, email, password_hash, role, is_active, created_at, updated_at
+		SELECT id, tenant_id, email, password_hash, role, is_active, created_at, updated_at
 		FROM users
 		WHERE id = $1 AND is_active = true`
 
@@ -75,7 +76,7 @@ func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.Use
 // Returns apperror.NotFound("user") when the row does not exist.
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
 	const q = `
-		SELECT id, email, password_hash, role, is_active, created_at, updated_at
+		SELECT id, tenant_id, email, password_hash, role, is_active, created_at, updated_at
 		FROM users
 		WHERE email = $1`
 
@@ -140,7 +141,7 @@ func (r *userRepository) List(ctx context.Context, limit, offset int) ([]*model.
 	// Data query — omit password_hash for safety; reconstruct the full struct
 	// with an empty hash so callers can still use model.User.
 	const q = `
-		SELECT id, email, role, is_active, created_at, updated_at
+		SELECT id, tenant_id, email, role, is_active, created_at, updated_at
 		FROM users
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2`
@@ -156,6 +157,7 @@ func (r *userRepository) List(ctx context.Context, limit, offset int) ([]*model.
 		u := &model.User{}
 		if err := rows.Scan(
 			&u.ID,
+			&u.TenantID,
 			&u.Email,
 			&u.Role,
 			&u.IsActive,
@@ -179,6 +181,7 @@ func scanUser(row pgx.Row) (*model.User, error) {
 	u := &model.User{}
 	err := row.Scan(
 		&u.ID,
+		&u.TenantID,
 		&u.Email,
 		&u.PasswordHash,
 		&u.Role,

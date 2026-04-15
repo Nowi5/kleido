@@ -21,20 +21,35 @@ export interface UsersListResponse {
   per_page: number
 }
 
+export interface TenantResponse {
+  id: string
+  name: string
+  slug: string
+}
+
 // ── In-memory token store ─────────────────────────────────────────────────────
 // Access token lives in memory only — never localStorage / sessionStorage.
 // localStorage is accessible to any XSS payload; memory is safer for SPAs.
 let _token: string | null = null
+let _tenantId: string | null = null
 export const setToken  = (t: string) => { _token = t }
 export const clearToken = ()          => { _token = null }
 export const getToken  = ()           => _token
+export const setTenantId = (id: string) => { _tenantId = id }
+export const getTenantId = () => _tenantId
 
 // ── Core fetch wrapper ────────────────────────────────────────────────────────
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (_token) headers['Authorization'] = `Bearer ${_token}`
 
-  const res = await fetch(BASE + path, {
+  let url = BASE + path
+  if (_tenantId) {
+    const separator = path.includes('?') ? '&' : '?'
+    url = `${url}${separator}tenant_id=${_tenantId}`
+  }
+
+  const res = await fetch(url, {
     method,
     headers,
     credentials: 'include', // sends refresh_token httpOnly cookie automatically
@@ -75,5 +90,10 @@ export const api = {
 
     delete: (id: string) =>
       request<void>('DELETE', `/api/v1/users/${id}`),
+  },
+
+  tenants: {
+    list: () =>
+      request<TenantResponse[]>('GET', '/api/v1/tenants'),
   },
 }

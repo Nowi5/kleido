@@ -3,6 +3,32 @@
 ## Module name
 The Go module is `kleido` (not `myapp`). All import paths start with `kleido/`.
 
+## Multi-Tenancy
+This project implements tenant isolation by design. Key components:
+
+- **Model**: `internal/model/tenant.go` - Tenant struct with ID, Name, Slug, Settings
+- **Repository**: `internal/repository/postgres/tenant.go` - CRUD operations for tenants
+- **Service**: `internal/service/tenant.go` - Business logic for tenant management
+- **Middleware**: `internal/middleware/tenant.go` - Tenant resolution from subdomain/query params
+- **Handler**: `internal/handler/tenant.go` - HTTP endpoints for tenant operations
+- **Context**: `internal/reqctx/reqctx.go` - TenantID context utilities
+
+### Tenant Resolution Priority
+1. Subdomain: `tenant1.example.com` → resolves to tenant with slug `tenant1`
+2. Query Parameter: `?tenant_id=<uuid>` - explicit tenant ID
+
+### Tenant-Aware Endpoints
+- `GET /api/v1/tenants` - List all active tenants
+- `GET /api/v1/tenants/{id}` - Get tenant by ID
+- Any endpoint requiring tenant context uses `middleware.RequireTenantID`
+
+### Database
+- `migrations/000002_create_tenants.up.sql` - Creates tenants table with tenant_id FK on users
+- Default tenant "default" is seeded on startup via `cmd/api/seed.go`
+
+### Testing
+Tenant tests are in `internal/middleware/tenant_test.go` and `internal/handler/tenant_test.go`.
+
 ## Build order matters
 `make build` runs `ui-build` → `templ-generate` → `go build` in sequence. If you run `go build` directly without first building `web/dist/` and generating `*_templ.go` files, the build will fail.
 

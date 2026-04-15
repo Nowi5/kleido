@@ -176,6 +176,8 @@ kleido/                         ← repo root (this directory)
 |--------|------|------|-------------|
 | `GET` | `/healthz` | None | Liveness probe — always 200 if process is running |
 | `GET` | `/readyz` | None | Readiness probe — 503 if DB or Redis is unreachable |
+| `GET` | `/api/v1/tenants` | None | List all active tenants |
+| `GET` | `/api/v1/tenants/{id}` | None | Get tenant by ID |
 | `POST` | `/api/v1/auth/register` | None | Create new user account (returns 403 if `AUTH_REGISTRATION_ENABLED=false`) |
 | `POST` | `/api/v1/auth/login` | None | Authenticate; returns access token + sets refresh cookie |
 | `POST` | `/api/v1/auth/refresh` | Cookie | Issue new access token; rotates refresh token |
@@ -191,6 +193,44 @@ kleido/                         ← repo root (this directory)
 | `DELETE` | `/admin/users/{id}` | Bearer (admin) | Admin panel — soft-delete; used by htmx |
 | `GET` | `/` | None | React SPA entry point (`Cache-Control: no-store`) |
 | `GET` | `/assets/*` | None | Hashed static assets (`Cache-Control: immutable`) |
+
+## Multi-Tenancy
+
+Kleido supports **tenant isolation by design** — every database transaction is scoped to a specific tenant.
+
+### Tenant Resolution
+
+The system resolves the current tenant context using the following priority:
+
+1. **Subdomain**: e.g., `tenant1.example.com` → tenant with slug `tenant1`
+2. **Query Parameter**: `?tenant_id=<uuid>` explicitly provided in the request
+
+If no tenant is detected via the methods above, the Login Screen displays a dropdown menu allowing the user to select their tenant before proceeding with authentication.
+
+### Tenant API Endpoints
+
+```bash
+# List all active tenants
+curl http://localhost:8080/api/v1/tenants
+
+# Get tenant by ID
+curl http://localhost:8080/api/v1/tenants/{id}
+
+# Tenant-aware endpoint (requires tenant_id)
+curl "http://localhost:8080/api/v1/tenant-demo/status?tenant_id=<uuid>"
+
+# Subdomain-based tenant resolution
+curl -H "Host: default.example.com" "http://localhost:8080/api/v1/tenant-demo/status"
+```
+
+### Database Schema
+
+- **tenants** table: manages organizational entities (ID, Name, Slug, Settings)
+- **users** table: includes `tenant_id` foreign key for tenant isolation
+
+### Default Tenant
+
+A default tenant with slug `default` is automatically seeded on first startup. |
 
 ## Web UI
 

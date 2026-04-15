@@ -1,5 +1,5 @@
-import { FormEvent, useState } from 'react'
-import { api, setToken, UserResponse } from '../api/client'
+import { FormEvent, useState, useEffect } from 'react'
+import { api, setToken, setTenantId, TenantResponse, UserResponse } from '../api/client'
 import {
   AuthCardHeader,
   centeredLayout, authCardStyle, inputStyle,
@@ -17,12 +17,23 @@ export default function LoginPage({ onLogin, onGoRegister }: Props) {
   const [password, setPassword] = useState('')
   const [error,    setError]    = useState<string | null>(null)
   const [loading,  setLoading]  = useState(false)
+  const [tenants, setTenants]   = useState<TenantResponse[]>([])
+  const [selectedTenant, setSelectedTenant] = useState<string>('')
+
+  useEffect(() => {
+    api.tenants.list()
+      .then(setTenants)
+      .catch(() => {})
+  }, [])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
     try {
+      if (selectedTenant) {
+        setTenantId(selectedTenant)
+      }
       const tok  = await api.auth.login(email, password)
       setToken(tok.access_token)
       const user = await api.users.me()
@@ -42,6 +53,22 @@ export default function LoginPage({ onLogin, onGoRegister }: Props) {
         {error && <ErrorBanner message={error} />}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {tenants.length > 0 && (
+            <FormField label="Organization">
+              <select
+                value={selectedTenant}
+                onChange={e => setSelectedTenant(e.target.value)}
+                style={{ ...inputStyle, padding: '0.75rem' }}
+                required={tenants.length > 1}
+              >
+                <option value="">{tenants.length > 1 ? 'Select your organization' : tenants[0].name}</option>
+                {tenants.length > 1 && tenants.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </FormField>
+          )}
+
           <FormField label="Email">
             <input
               type="email"

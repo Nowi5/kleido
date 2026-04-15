@@ -26,6 +26,14 @@ type UserRepository interface {
 	List(ctx context.Context, limit, offset int) ([]*model.User, int64, error)
 }
 
+// TenantRepository defines the data-access contract for tenants.
+type TenantRepository interface {
+	Create(ctx context.Context, tenant *model.Tenant) error
+	FindByID(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
+	FindBySlug(ctx context.Context, slug string) (*model.Tenant, error)
+	List(ctx context.Context) ([]*model.Tenant, error)
+}
+
 // SessionRepository manages JWT token lifecycle in Redis.
 type SessionRepository interface {
 	// StoreRefreshToken stores sha256(token) → userID with TTL.

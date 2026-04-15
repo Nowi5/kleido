@@ -9,6 +9,7 @@ import (
 	"kleido/internal/config"
 	"kleido/internal/handler"
 	"kleido/internal/middleware"
+	"kleido/internal/reqctx"
 	"kleido/internal/service"
 
 	"github.com/go-chi/chi/v5"
@@ -27,6 +28,7 @@ func buildRouter(
 	jwtSvc *auth.JWTService,
 	authSvc service.AuthService,
 	userSvc service.UserService,
+	tenantSvc service.TenantService,
 	sessions middleware.SessionChecker,
 	limiter middleware.RateLimiter,
 ) http.Handler {
@@ -40,6 +42,7 @@ func buildRouter(
 	r.Use(middleware.SecurityHeaders(cfg.App.Env == "production"))
 	r.Use(middleware.HTTPMetrics()) // must come after RecoveringPanicCounter
 	r.Use(middleware.RequestLogger(log))
+	r.Use(middleware.TenantMiddleware(tenantSvc))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -63,11 +66,27 @@ func buildRouter(
 	// ── API v1 ────────────────────────────────────────────────────────────────
 	authH := handler.NewAuthHandler(authSvc, jwtSvc, cfg.App.Env == "production", cfg.App.RegistrationEnabled)
 	userH := handler.NewUserHandler(userSvc)
+	tenantH := handler.NewTenantHandler(tenantSvc)
 
 	// sessionRepo implements both RateLimiter and UserRateLimiter interfaces.
 	userLimiter, _ /*ok*/ := limiter.(middleware.UserRateLimiter) //nolint:errcheck
 
 	r.Route("/api/v1", func(r chi.Router) {
+		// Public endpoints — no JWT required.
+		r.Get("/tenants", tenantH.List)
+		r.Get("/tenants/{id}", tenantH.GetByID)
+
+		// Tenant-aware endpoints - require tenant context
+		r.Route("/tenant-demo", func(r chi.Router) {
+			r.Use(middleware.RequireTenantID)
+			r.Get("/status", func(w http.ResponseWriter, r *http.Request) {
+				tenantID := reqctx.TenantIDFromContext(r.Context())
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"status":"ok","tenant_id":"` + tenantID.String() + `"}`))
+			})
+		})
+
 		// Public auth endpoints — no JWT required.
 		r.Post("/auth/register", authH.Register)
 		r.Post("/auth/login", authH.Login)
