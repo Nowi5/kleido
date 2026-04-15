@@ -45,6 +45,16 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
+      # swag uses go/packages internally; it needs *_templ.go to exist or it
+      # cannot resolve imports and reports "build constraints exclude all Go files".
+      - name: Install templ CLI
+        env:
+          TEMPL_VERSION: "v0.2.778"
+        run: go install "github.com/a-h/templ/cmd/templ@${TEMPL_VERSION}"
+
+      - name: Generate templ
+        run: templ generate ./web/components/...
+
       - name: Install swag
         run: go install github.com/swaggo/swag/cmd/swag@latest
 

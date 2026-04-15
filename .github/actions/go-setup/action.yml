@@ -44,7 +44,9 @@ runs:
 
     - name: Install templ CLI
       shell: bash
-      run: go install github.com/a-h/templ/cmd/templ@${{ inputs.templ-version }}
+      env:
+        TEMPL_VERSION: ${{ inputs.templ-version }}
+      run: go install "github.com/a-h/templ/cmd/templ@${TEMPL_VERSION}"
 
     - name: Generate templ
       shell: bash
