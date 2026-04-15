@@ -184,7 +184,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 //	@Description	Issues a new access token using the refresh_token cookie. The old refresh token is revoked and replaced with a new one (rotation).
 //	@Tags			auth
 //	@Produce		json
-//	@Success		200	{object}	TokenResponse	"New access token; new refresh_token cookie set"
+//	@Success		200	{object}	TokenResponse			"New access token; new refresh_token cookie set"
 //	@Failure		401	{object}	apperror.ErrorResponse	"Missing or invalid refresh token cookie"
 //	@Router			/auth/refresh [post]
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {

@@ -1,19 +1,19 @@
 // Package main is the entry point for the kleido API server.
 //
-//	@title			Kleido API
-//	@version		1.0
-//	@description	Production-grade Go REST API. JWT RS256 authentication required on all /api/v1/ endpoints except /auth/register and /auth/login.
+//	@title						Kleido API
+//	@version					1.0
+//	@description				Production-grade Go REST API. JWT RS256 authentication required on all /api/v1/ endpoints except /auth/register and /auth/login.
 //
-//	@contact.name	API Support
-//	@contact.url	https://github.com/nowi5/kleido
-//	@contact.email	api@example.com
+//	@contact.name				API Support
+//	@contact.url				https://github.com/nowi5/kleido
+//	@contact.email				api@example.com
 //
-//	@license.name	MIT
-//	@license.url	https://opensource.org/licenses/MIT
+//	@license.name				MIT
+//	@license.url				https://opensource.org/licenses/MIT
 //
-//	@host		localhost:8080
-//	@BasePath	/api/v1
-//	@schemes	http https
+//	@host						localhost:8080
+//	@BasePath					/api/v1
+//	@schemes					http https
 //
 //	@securityDefinitions.apikey	BearerAuth
 //	@in							header

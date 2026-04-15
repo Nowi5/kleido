@@ -168,9 +168,9 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			page		query		int	false	"Page number (1-based)"		default(1)
 //	@Param			per_page	query		int	false	"Items per page (max 100)"	default(20)
-//	@Success		200	{object}	ListUsersResponse
-//	@Failure		401	{object}	apperror.ErrorResponse
-//	@Failure		403	{object}	apperror.ErrorResponse
+//	@Success		200			{object}	ListUsersResponse
+//	@Failure		401			{object}	apperror.ErrorResponse
+//	@Failure		403			{object}	apperror.ErrorResponse
 //	@Security		BearerAuth
 //	@Router			/users [get]
 func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {

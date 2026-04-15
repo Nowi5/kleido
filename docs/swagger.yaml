@@ -10,6 +10,11 @@ definitions:
             type: string
         type: object
     type: object
+  handler.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    type: object
   handler.ListUsersResponse:
     properties:
       data:
@@ -51,6 +56,13 @@ definitions:
         type: string
       password:
         example: Password1!
+        type: string
+    type: object
+  handler.ResetPasswordRequest:
+    properties:
+      new_password:
+        type: string
+      token:
         type: string
     type: object
   handler.TokenResponse:
@@ -101,6 +113,37 @@ info:
   title: Kleido API
   version: "1.0"
 paths:
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Sends a password reset email. Always returns 200 regardless of whether
+        the email is registered, to prevent account enumeration.
+      parameters:
+      - description: Email address
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: if your email is registered, a reset link has been
+            sent'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.ErrorResponse'
+      summary: Request password reset
+      tags:
+      - auth
   /auth/login:
     post:
       consumes:
@@ -196,6 +239,36 @@ paths:
           schema:
             $ref: '#/definitions/apperror.ErrorResponse'
       summary: Register a new user
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Sets a new password using a valid reset token from the email link.
+        The token is single-use and expires after 1 hour.
+      parameters:
+      - description: Reset token and new password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: password updated'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid/expired token or weak password
+          schema:
+            $ref: '#/definitions/apperror.ErrorResponse'
+      summary: Reset password using token
       tags:
       - auth
   /healthz:

@@ -29,7 +29,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@1b6671e713fd51c7f28eb88acf29c9bf3c2eb15f # v6.5.0
         with:
-          version: v1.64
+          version: v2.1.6
 
       - name: TypeScript type check
         run: cd web && npm run type-check
@@ -45,21 +45,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      # go-setup builds the UI (web/dist/) and generates *_templ.go files.
+      # Both are required for swag / go list to resolve all packages without errors.
+      - uses: ./.github/actions/go-setup
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: true
-
-      # swag uses go/packages internally; it needs *_templ.go to exist or it
-      # cannot resolve imports and reports "build constraints exclude all Go files".
-      - name: Install templ CLI
-        env:
-          TEMPL_VERSION: "v0.2.778"
-        run: go install "github.com/a-h/templ/cmd/templ@${TEMPL_VERSION}"
-
-      - name: Generate templ
-        run: templ generate ./web/components/...
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install swag
         run: go install github.com/swaggo/swag/cmd/swag@latest
