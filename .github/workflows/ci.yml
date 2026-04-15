@@ -222,6 +222,7 @@ jobs:
         run: docker build --build-arg VERSION=ci -t kleido:ci .
 
       - name: Run Trivy vulnerability scanner
+        id: trivy
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           image-ref: "kleido:ci"
@@ -234,7 +235,7 @@ jobs:
 
       - name: Upload Trivy SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && steps.trivy.outcome == 'success'
         with:
           sarif_file: "trivy-results.sarif"
 
