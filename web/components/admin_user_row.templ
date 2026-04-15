@@ -1,0 +1,32 @@
+package components
+
+import "github.com/nowi5/kleido/internal/model"
+
+// AdminUserRow renders a single <tr> for the admin user table.
+// The hx-delete button fires a DELETE to /admin/users/{id} and removes the row on success.
+// The Authorization header is injected automatically via the hx-headers attribute on <body>
+// set by the script in Layout.
+templ AdminUserRow(u *model.UserResponse) {
+	<tr id={ "user-row-" + u.ID.String() }>
+		<td>{ u.Email }</td>
+		<td>{ u.Role }</td>
+		<td>
+			if u.IsActive {
+				Active
+			} else {
+				Inactive
+			}
+		</td>
+		<td>{ u.CreatedAt.Format("2006-01-02") }</td>
+		<td>
+			<button
+				hx-delete={ "/admin/users/" + u.ID.String() }
+				hx-confirm={ "Delete " + u.Email + "?" }
+				hx-target={ "#user-row-" + u.ID.String() }
+				hx-swap="outerHTML"
+			>
+				Delete
+			</button>
+		</td>
+	</tr>
+}

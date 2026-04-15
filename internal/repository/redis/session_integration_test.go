@@ -1,0 +1,249 @@
+//go:build integration
+
+package redis_test
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	redisrepo "github.com/nowi5/kleido/internal/repository/redis"
+	goredis "github.com/redis/go-redis/v9"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
+)
+
+// testRedis starts a redis:7-alpine container and returns a connected client.
+// The container is terminated via t.Cleanup.
+func testRedis(t *testing.T) *goredis.Client {
+	t.Helper()
+
+	ctx := context.Background()
+
+	req := testcontainers.ContainerRequest{
+		Image:        "redis:7-alpine",
+		ExposedPorts: []string{"6379/tcp"},
+		WaitingFor:   wait.ForListeningPort("6379/tcp").WithStartupTimeout(60 * time.Second),
+	}
+
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	if err != nil {
+		t.Fatalf("start redis container: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if err := container.Terminate(context.Background()); err != nil {
+			t.Logf("terminate container: %v", err)
+		}
+	})
+
+	host, err := container.Host(ctx)
+	if err != nil {
+		t.Fatalf("container host: %v", err)
+	}
+	port, err := container.MappedPort(ctx, "6379")
+	if err != nil {
+		t.Fatalf("container port: %v", err)
+	}
+
+	rdb := goredis.NewClient(&goredis.Options{
+		Addr: host + ":" + port.Port(),
+	})
+
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		t.Fatalf("redis ping: %v", err)
+	}
+
+	return rdb
+}
+
+func TestStoreAndValidateRefreshToken(t *testing.T) {
+	t.Parallel()
+
+	rdb := testRedis(t)
+	repo := redisrepo.NewSessionRepo(rdb)
+	ctx := context.Background()
+
+	token := "raw-refresh-token-abc123"
+	userID := "user-uuid-001"
+
+	if err := repo.StoreRefreshToken(ctx, token, userID, 5*time.Minute); err != nil {
+		t.Fatalf("StoreRefreshToken: %v", err)
+	}
+
+	got, err := repo.ValidateRefreshToken(ctx, token)
+	if err != nil {
+		t.Fatalf("ValidateRefreshToken: %v", err)
+	}
+	if got != userID {
+		t.Errorf("userID: want %q, got %q", userID, got)
+	}
+}
+
+func TestValidateRefreshToken_Unknown(t *testing.T) {
+	t.Parallel()
+
+	rdb := testRedis(t)
+	repo := redisrepo.NewSessionRepo(rdb)
+	ctx := context.Background()
+
+	_, err := repo.ValidateRefreshToken(ctx, "does-not-exist")
+	if err == nil {
+		t.Error("expected error for unknown token, got nil")
+	}
+}
+
+func TestRevokeRefreshToken(t *testing.T) {
+	t.Parallel()
+
+	rdb := testRedis(t)
+	repo := redisrepo.NewSessionRepo(rdb)
+	ctx := context.Background()
+
+	token := "revoke-me-token"
+	if err := repo.StoreRefreshToken(ctx, token, "user-001", 5*time.Minute); err != nil {
+		t.Fatalf("StoreRefreshToken: %v", err)
+	}
+	if err := repo.RevokeRefreshToken(ctx, token); err != nil {
+		t.Fatalf("RevokeRefreshToken: %v", err)
+	}
+
+	_, err := repo.ValidateRefreshToken(ctx, token)
+	if err == nil {
+		t.Error("expected error after revocation, got nil")
+	}
+}
+
+func TestBlocklistJTI(t *testing.T) {
+	t.Parallel()
+
+	rdb := testRedis(t)
+	repo := redisrepo.NewSessionRepo(rdb)
+	ctx := context.Background()
+
+	jti := "test-jti-abc"
+	if err := repo.BlocklistJTI(ctx, jti, 5*time.Minute); err != nil {
+		t.Fatalf("BlocklistJTI: %v", err)
+	}
+
+	blocked, err := repo.IsBlocklisted(ctx, jti)
+	if err != nil {
+		t.Fatalf("IsBlocklisted: %v", err)
+	}
+	if !blocked {
+		t.Error("expected JTI to be blocklisted")
+	}
+}
+
+func TestIsBlocklisted_Unknown(t *testing.T) {
+	t.Parallel()
+
+	rdb := testRedis(t)
+	repo := redisrepo.NewSessionRepo(rdb)
+	ctx := context.Background()
+
+	blocked, err := repo.IsBlocklisted(ctx, "unknown-jti")
+	if err != nil {
+		t.Fatalf("IsBlocklisted: %v", err)
+	}
+	if blocked {
+		t.Error("unknown JTI must not be blocklisted")
+	}
+}
+
+func TestRateLimitAllow_SlidingWindow(t *testing.T) {
+	t.Parallel()
+
+	rdb := testRedis(t)
+	repo := redisrepo.NewSessionRepo(rdb)
+	ctx := context.Background()
+
+	key := "test-ip-rate-limit"
+	limit := int64(3)
+	window := 10 * time.Second
+
+	for i := 0; i < 3; i++ {
+		allowed, _, _, err := repo.RateLimitAllow(ctx, key, limit, window)
+		if err != nil {
+			t.Fatalf("call %d: RateLimitAllow: %v", i+1, err)
+		}
+		if !allowed {
+			t.Errorf("call %d: expected allowed=true, got false", i+1)
+		}
+	}
+
+	// 4th and 5th calls should be denied.
+	for i := 3; i < 5; i++ {
+		allowed, remaining, _, err := repo.RateLimitAllow(ctx, key, limit, window)
+		if err != nil {
+			t.Fatalf("call %d: RateLimitAllow: %v", i+1, err)
+		}
+		if allowed {
+			t.Errorf("call %d: expected allowed=false, got true", i+1)
+		}
+		if remaining != 0 {
+			t.Errorf("call %d: remaining should be 0, got %d", i+1, remaining)
+		}
+	}
+}
+
+func TestRotateRefreshToken(t *testing.T) {
+	t.Parallel()
+
+	rdb := testRedis(t)
+	repo := redisrepo.NewSessionRepo(rdb)
+	ctx := context.Background()
+
+	oldToken := "rotate-old-token"
+	newToken := "rotate-new-token"
+	userID := "rotate-user-uuid"
+
+	// Store the old token first.
+	if err := repo.StoreRefreshToken(ctx, oldToken, userID, 5*time.Minute); err != nil {
+		t.Fatalf("StoreRefreshToken: %v", err)
+	}
+
+	// Rotate: old → new.
+	if err := repo.RotateRefreshToken(ctx, oldToken, newToken, userID, 5*time.Minute); err != nil {
+		t.Fatalf("RotateRefreshToken: %v", err)
+	}
+
+	// Old token must no longer be valid.
+	_, err := repo.ValidateRefreshToken(ctx, oldToken)
+	if err == nil {
+		t.Error("old token must be invalid after rotation")
+	}
+
+	// New token must be valid and return the correct userID.
+	gotID, err := repo.ValidateRefreshToken(ctx, newToken)
+	if err != nil {
+		t.Fatalf("ValidateRefreshToken(new): %v", err)
+	}
+	if gotID != userID {
+		t.Errorf("userID: want %q, got %q", userID, gotID)
+	}
+}
+
+func TestRateLimitAllow_FailOpen(t *testing.T) {
+	t.Parallel()
+
+	// Create a client pointing at a non-existent Redis to simulate unavailability.
+	rdb := goredis.NewClient(&goredis.Options{
+		Addr:        "localhost:19999",
+		DialTimeout: 100 * time.Millisecond,
+	})
+
+	repo := redisrepo.NewSessionRepo(rdb)
+	ctx := context.Background()
+
+	allowed, _, _, err := repo.RateLimitAllow(ctx, "fail-open-key", 10, time.Minute)
+	if err != nil {
+		t.Fatalf("expected no error on fail-open, got: %v", err)
+	}
+	if !allowed {
+		t.Error("fail-open: expected allowed=true when Redis is unavailable")
+	}
+}

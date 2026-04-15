@@ -1,0 +1,51 @@
+package components
+
+// Layout is the base HTML shell shared by all admin pages.
+// token is the caller's Bearer JWT — injected into a <meta> tag so htmx can
+// attach it as an Authorization header on every AJAX request.
+templ Layout(title string, token string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="api-token" content={ token }/>
+			<title>{ title } — Kleido Admin</title>
+			<style>
+				body { font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+				table { width: 100%; border-collapse: collapse; }
+				th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; }
+				th { background: #f5f5f5; font-weight: 600; }
+				nav { border-bottom: 1px solid #eee; margin-bottom: 2rem; padding-bottom: 1rem; }
+				nav a { margin-right: 1rem; text-decoration: none; color: #0066cc; }
+				button { cursor: pointer; padding: 0.25rem 0.75rem; }
+			</style>
+			<script src="https://unpkg.com/htmx.org@1.9.12"
+				integrity="sha384-sqjBIiSGHATSBfzn0vZkFHHhQHjvvHBSq7C9MQRKkEnNB+fMGKHfF3SKDwBkSBz"
+				crossorigin="anonymous"
+				defer></script>
+			<script>
+				// Attach the Bearer token from the <meta> tag to every htmx request
+				// so admin API calls are properly authenticated.
+				document.addEventListener("DOMContentLoaded", function () {
+					var t = document.querySelector('meta[name="api-token"]');
+					if (t && t.content) {
+						document.body.setAttribute(
+							"hx-headers",
+							JSON.stringify({ "Authorization": "Bearer " + t.content })
+						);
+						htmx.process(document.body);
+					}
+				});
+			</script>
+		</head>
+		<body>
+			<nav>
+				<a href="/admin/users">Users</a>
+			</nav>
+			<main>
+				{ children... }
+			</main>
+		</body>
+	</html>
+}

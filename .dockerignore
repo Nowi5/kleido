@@ -1,0 +1,45 @@
+# ── Version control ───────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ── Editor / OS artifacts ─────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ── Local config & secrets ────────────────────────────────────────────────────
+.env
+.env.*
+keys/
+
+# ── Go build outputs ──────────────────────────────────────────────────────────
+bin/
+coverage.out
+coverage.html
+reports/
+
+# ── Node / UI artifacts ───────────────────────────────────────────────────────
+web/node_modules/
+# web/dist is intentionally NOT ignored — the go-builder stage needs it from
+# the ui-builder stage via COPY --from, but the COPY . . below is from host.
+# Because the ui-builder copies node_modules separately and npm ci runs inside
+# the container, excluding node_modules here keeps the build context small.
+
+# ── Docker files (not needed inside image) ────────────────────────────────────
+docker-compose*.yml
+docker/
+
+# ── CI / tooling ──────────────────────────────────────────────────────────────
+.github/
+.golangci.yml
+.mockery.yaml
+.trivyignore
+
+# ── Docs & tests (not needed in runtime image) ────────────────────────────────
+# NOTE: docs/ is intentionally NOT ignored — it contains the swag-generated Go
+# package (docs/docs.go) imported by cmd/api/swagger.go. Without it the build fails.
+*.md
+*_test.go

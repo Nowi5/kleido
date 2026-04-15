@@ -1,0 +1,41 @@
+package components
+
+import (
+	"fmt"
+	"github.com/nowi5/kleido/internal/model"
+)
+
+// AdminUsers renders the full admin user-list page.
+// token is the caller's Bearer JWT, passed through to Layout for htmx auth.
+templ AdminUsers(users []*model.UserResponse, total int64, token string) {
+	@Layout("Users", token) {
+		<h1>
+			Users
+			<span style="font-size: 0.9rem; font-weight: normal; color: #666;">
+				({ fmt.Sprintf("%d", total) } total)
+			</span>
+		</h1>
+		<table>
+			<thead>
+				<tr>
+					<th>Email</th>
+					<th>Role</th>
+					<th>Active</th>
+					<th>Created</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody id="user-table-body">
+				@AdminUsersTableBody(users)
+			</tbody>
+		</table>
+	}
+}
+
+// AdminUsersTableBody renders only the tbody rows.
+// Returned as an htmx partial when HX-Request header is present.
+templ AdminUsersTableBody(users []*model.UserResponse) {
+	for _, u := range users {
+		@AdminUserRow(u)
+	}
+}

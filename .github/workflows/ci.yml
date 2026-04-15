@@ -1,0 +1,365 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**", "fix/**", "chore/**"]
+  pull_request:
+    branches: [main]
+
+env:
+  GO_VERSION: "1.25.x"
+  NODE_VERSION: "20"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+# ── Shared setup steps (used via composite or duplicated) ─────────────────────
+# Note: GitHub Actions doesn't support YAML anchors; steps are duplicated where
+# needed. Extract to a composite action in a future sprint if duplication grows.
+
+jobs:
+  # ── 1. Lint ────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install UI dependencies
+        run: cd web && npm ci
+
+      - name: Build UI
+        run: cd web && npm run build
+
+      - name: Install templ CLI
+        run: go install github.com/a-h/templ/cmd/templ@v0.2.778
+
+      - name: Generate templ
+        run: templ generate ./web/components/...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
+
+  # ── 2. Swagger docs up-to-date ────────────────────────────────────────────
+  swagger:
+    name: Swagger docs up to date
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install swag
+        run: go install github.com/swaggo/swag/cmd/swag@latest
+
+      - name: Check swagger docs
+        run: make swagger-check
+
+  # ── 3. Build ───────────────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install UI dependencies
+        run: cd web && npm ci
+
+      - name: Build UI
+        run: cd web && npm run build
+
+      - name: Install templ CLI
+        run: go install github.com/a-h/templ/cmd/templ@v0.2.778
+
+      - name: Generate templ
+        run: templ generate ./web/components/...
+
+      - name: Build Go binary
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+            -trimpath \
+            -ldflags="-s -w -extldflags '-static'" \
+            -o /tmp/kleido-api \
+            ./cmd/api
+
+  # ── 4. Unit tests ──────────────────────────────────────────────────────────
+  test:
+    name: Test (Go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ["1.25.x"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install UI dependencies
+        run: cd web && npm ci
+
+      - name: Build UI
+        run: cd web && npm run build
+
+      - name: Install templ CLI
+        run: go install github.com/a-h/templ/cmd/templ@v0.2.778
+
+      - name: Generate templ
+        run: templ generate ./web/components/...
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Run tests (unit) with coverage
+        run: |
+          mkdir -p reports
+          gotestsum --junitfile reports/unit.xml --format pkgname \
+            -- -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: reports/unit.xml
+
+      - name: Check coverage gates
+        run: make test-coverage-check
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.out
+          flags: unit
+          fail_ci_if_error: false   # don't break the build if Codecov is down
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # ── 5. Integration tests ───────────────────────────────────────────────────
+  integration-test:
+    name: Integration tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: kleido_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U user -d kleido_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run integration tests
+        env:
+          TEST_DATABASE_URL: postgres://user:password@localhost:5432/kleido_test?sslmode=disable
+          TEST_REDIS_ADDR: localhost:6379
+        run: make test-integration
+
+  # ── 6. E2E tests ──────────────────────────────────────────────────────────
+  e2e-test:
+    name: E2E tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install UI dependencies
+        run: cd web && npm ci
+
+      - name: Build UI
+        run: cd web && npm run build
+
+      - name: Install templ CLI
+        run: go install github.com/a-h/templ/cmd/templ@v0.2.778
+
+      - name: Generate templ
+        run: templ generate ./web/components/...
+
+      - name: Run E2E tests
+        run: go test -v -race -tags=e2e -count=1 -timeout=10m ./cmd/api/
+
+  # ── 7. Security scanning ──────────────────────────────────────────────────
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        run: govulncheck ./...
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install UI dependencies
+        run: cd web && npm ci
+
+      - name: Build UI
+        run: cd web && npm run build
+
+      - name: Install templ CLI
+        run: go install github.com/a-h/templ/cmd/templ@v0.2.778
+
+      - name: Generate templ
+        run: templ generate ./web/components/...
+
+      - name: Build container image for scanning
+        run: docker build --build-arg VERSION=ci -t kleido:ci .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "kleido:ci"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "HIGH,CRITICAL"
+          ignore-unfixed: true
+          trivyignores: ".trivyignore"
+
+      - name: Upload Trivy SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+  # ── 7. Build & push Docker image (main branch only) ───────────────────────
+  docker:
+    name: Docker build & push
+    runs-on: ubuntu-latest
+    needs: [lint, swagger, build, test, e2e-test, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

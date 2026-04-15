@@ -1,0 +1,8 @@
+# .trivyignore — CVE suppressions for the kleido container image.
+#
+# Format: one CVE ID per line.
+# Always include a comment explaining why the CVE is suppressed and
+# a review date so stale suppressions get cleaned up.
+#
+# Example:
+# CVE-2023-XXXXX  # suppressed: only affects feature X which we don't use; review 2025-01

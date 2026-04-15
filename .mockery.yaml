@@ -1,0 +1,29 @@
+version: "2"
+packages:
+  github.com/nowi5/kleido/internal/repository:
+    config:
+      dir: "internal/mocks/repository"
+      outpkg: "mockrepo"
+      mockname: "Mock{{.InterfaceName}}"
+    interfaces:
+      UserRepository:
+      SessionRepository:
+      CacheRepository:
+
+  github.com/nowi5/kleido/internal/service:
+    config:
+      dir: "internal/mocks/service"
+      outpkg: "mocksvc"
+      mockname: "Mock{{.InterfaceName}}"
+    interfaces:
+      UserService:
+      AuthService:
+
+  github.com/nowi5/kleido/internal/middleware:
+    config:
+      dir: "internal/mocks/middleware"
+      outpkg: "mockmw"
+      mockname: "Mock{{.InterfaceName}}"
+    interfaces:
+      SessionChecker:
+      RateLimiter:

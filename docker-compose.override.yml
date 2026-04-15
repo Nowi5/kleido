@@ -1,0 +1,26 @@
+# docker-compose.override.yml — local development overrides.
+# Automatically merged with docker-compose.yml by docker-compose CLI.
+# Do NOT commit secrets or local paths into the base docker-compose.yml.
+services:
+  api:
+    environment:
+      APP_ENV: development
+      OTEL_ENABLED: "false"
+    # Mount source for live log tailing; binary is still from the image.
+    volumes:
+      - ./keys:/app/keys:ro
+    # Expose debug port (not needed in prod).
+    ports:
+      - "8080:8080"
+    # Relaxed health timing for slower local builds.
+    healthcheck:
+      start_period: 30s
+
+  prometheus:
+    # Expose metrics UI directly in dev.
+    ports:
+      - "9090:9090"
+
+  grafana:
+    ports:
+      - "3001:3000"
