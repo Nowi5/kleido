@@ -128,3 +128,91 @@ func TestDir_UsesXDGConfigHome(t *testing.T) {
 		t.Errorf("Dir: want %q, got %q", want, dir)
 	}
 }
+
+func TestLoad_InvalidYAML_ReturnsError(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+
+	// Create the kleido config directory and write syntactically invalid YAML.
+	cfgDir := filepath.Join(dir, "kleido")
+	if err := os.MkdirAll(cfgDir, 0700); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	// An unclosed flow mapping is guaranteed to be rejected by the YAML parser.
+	if err := os.WriteFile(filepath.Join(cfgDir, "config.yaml"), []byte("{invalid yaml"), 0600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	_, err := configstore.Load()
+	if err == nil {
+		t.Error("Load with invalid YAML should return an error, got nil")
+	}
+}
+
+func TestPath_ReturnsConfigYAML(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tmp)
+
+	p, err := configstore.Path()
+	if err != nil {
+		t.Fatalf("Path: %v", err)
+	}
+	want := filepath.Join(tmp, "kleido", "config.yaml")
+	if p != want {
+		t.Errorf("Path: want %q, got %q", want, p)
+	}
+}
+
+// TestDir_FallsBackToHomeDir verifies the UserHomeDir fallback when XDG_CONFIG_HOME is unset.
+func TestDir_FallsBackToHomeDir(t *testing.T) {
+	// Explicitly clear XDG_CONFIG_HOME so Dir uses os.UserHomeDir instead.
+	t.Setenv("XDG_CONFIG_HOME", "")
+
+	dir, err := configstore.Dir()
+	if err != nil {
+		t.Fatalf("Dir without XDG_CONFIG_HOME: %v", err)
+	}
+	// The result must end in .config/kleido (or \kleido on Windows).
+	if filepath.Base(dir) != "kleido" {
+		t.Errorf("Dir: expected last segment to be 'kleido', got %q", dir)
+	}
+}
+
+// TestSave_MkdirFailure verifies Save returns an error when the config
+// directory cannot be created (a file blocks the path).
+func TestSave_MkdirFailure(t *testing.T) {
+	base := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", base)
+
+	// Place a regular file where the "kleido" directory should be created.
+	// os.MkdirAll will fail because it cannot turn a file into a directory.
+	blocker := filepath.Join(base, "kleido")
+	if err := os.WriteFile(blocker, []byte("block"), 0600); err != nil {
+		t.Fatalf("setup blocker file: %v", err)
+	}
+
+	err := configstore.Save(&configstore.Config{AccessToken: "tok"})
+	if err == nil {
+		t.Error("Save should return an error when the config directory cannot be created")
+	}
+}
+
+// TestClearToken_LoadError verifies ClearToken propagates a Load error when
+// the config file contains invalid YAML.
+func TestClearToken_LoadError(t *testing.T) {
+	base := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", base)
+
+	// Write invalid YAML so Load fails.
+	cfgDir := filepath.Join(base, "kleido")
+	if err := os.MkdirAll(cfgDir, 0700); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(cfgDir, "config.yaml"), []byte("{invalid yaml"), 0600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	if err := configstore.ClearToken(); err == nil {
+		t.Error("ClearToken should return an error when Load fails (invalid YAML)")
+	}
+}

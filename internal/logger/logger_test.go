@@ -164,3 +164,72 @@ func TestNew_ProductionMode(t *testing.T) {
 		t.Error("New must return non-nil logger")
 	}
 }
+
+func TestNew_LevelWarn(t *testing.T) {
+	t.Parallel()
+
+	l := logger.New("warn", "production", "svc", "v1")
+	if l == nil {
+		t.Error("New must return non-nil logger for warn level")
+	}
+}
+
+func TestNew_LevelError(t *testing.T) {
+	t.Parallel()
+
+	l := logger.New("error", "production", "svc", "v1")
+	if l == nil {
+		t.Error("New must return non-nil logger for error level")
+	}
+}
+
+func TestNew_LevelDebug_Production(t *testing.T) {
+	t.Parallel()
+
+	l := logger.New("debug", "production", "svc", "v1")
+	if l == nil {
+		t.Error("New must return non-nil logger for debug level in production mode")
+	}
+}
+
+func TestNew_UnknownLevel_DefaultsToInfo(t *testing.T) {
+	t.Parallel()
+
+	l := logger.New("verbose", "production", "svc", "v1")
+	if l == nil {
+		t.Error("New must return non-nil logger for unknown level (defaults to info)")
+	}
+}
+
+func TestWrapWithOTel_ReturnsNonNil(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	h := slog.NewJSONHandler(&buf, nil)
+	base := slog.New(h)
+
+	wrapped := logger.WrapWithOTel(base, "test-service")
+	if wrapped == nil {
+		t.Error("WrapWithOTel must return a non-nil logger")
+	}
+}
+
+func TestWrapWithOTel_LogsWithoutActiveSpan(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	h := slog.NewJSONHandler(&buf, nil)
+	base := slog.New(h)
+
+	wrapped := logger.WrapWithOTel(base, "test-service")
+
+	// Must not panic and must produce output when no OTel span is active.
+	wrapped.Info("hello from wrapped logger")
+
+	if buf.Len() == 0 {
+		t.Error("expected log output after WrapWithOTel.Info call, got empty buffer")
+	}
+	if !json.Valid(buf.Bytes()) {
+		t.Errorf("output must be valid JSON; got: %s", buf.String())
+	}
+}
