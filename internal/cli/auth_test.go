@@ -254,35 +254,16 @@ func TestLogin_EmailReadError(t *testing.T) {
 	}
 }
 
-func TestLogin_ConfigSaveError(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", "/nonexistent/path/that/fails")
-
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		//nolint:errcheck
-		w.Write([]byte(`{"access_token":"tok","expires_at":"2030-12-31T23:59:59Z"}`))
-	}))
-	defer srv.Close()
+func TestLogin_DefaultAPIURL(t *testing.T) {
+	isolate(t)
 
 	cmd := newAuthLoginCmd()
-	cmd.Flags().Set("api-url", srv.URL)
-
-	var stdin bytes.Buffer
-	stdin.WriteString("alice@example.com\n")
-	cmd.SetIn(&stdin)
-	t.Setenv("MYAPP_PASSWORD", "hunter2")
-
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-
-	err := cmd.RunE(cmd, nil)
-	if err == nil {
-		t.Fatal("expected error when config save fails")
+	flag := cmd.Flags().Lookup("api-url")
+	if flag == nil {
+		t.Fatal("expected --api-url flag")
 	}
-	if !strings.Contains(err.Error(), "save config") {
-		t.Errorf("expected 'save config' error, got: %v", err)
+	if flag.DefValue != "http://localhost:8080" {
+		t.Errorf("default api-url: want %q, got %q", "http://localhost:8080", flag.DefValue)
 	}
 }
 

@@ -106,3 +106,86 @@ func TestCheckAuth_EmptyToken_ReturnsError(t *testing.T) {
 		t.Fatal("expected error for empty access token")
 	}
 }
+
+func TestNewRootCmd_Structure(t *testing.T) {
+	cmd := NewRootCmd()
+
+	if cmd.Use != "kleido" {
+		t.Errorf("Use: want %q, got %q", "kleido", cmd.Use)
+	}
+	if cmd.SilenceUsage != true {
+		t.Error("SilenceUsage should be true")
+	}
+	if cmd.SilenceErrors != true {
+		t.Error("SilenceErrors should be true")
+	}
+
+	subCmds := cmd.Commands()
+	subCmdNames := make(map[string]bool)
+	for _, c := range subCmds {
+		subCmdNames[c.Name()] = true
+	}
+
+	for _, name := range []string{"auth", "users", "version", "completion"} {
+		if !subCmdNames[name] {
+			t.Errorf("expected subcommand %q not found", name)
+		}
+	}
+}
+
+func TestNewRootCmd_OutputFlag(t *testing.T) {
+	cmd := NewRootCmd()
+
+	flag := cmd.PersistentFlags().Lookup("output")
+	if flag == nil {
+		t.Fatal("expected --output flag")
+	}
+	if flag.DefValue != "table" {
+		t.Errorf("default output: want %q, got %q", "table", flag.DefValue)
+	}
+	if flag.Value.String() != "table" {
+		t.Errorf("output value: want %q, got %q", "table", flag.Value.String())
+	}
+}
+
+func TestSetVersion(t *testing.T) {
+	orig := appVersion
+	SetVersion("v1.2.3")
+	if appVersion != "v1.2.3" {
+		t.Errorf("appVersion: want %q, got %q", "v1.2.3", appVersion)
+	}
+	appVersion = orig
+}
+
+func TestNewClient(t *testing.T) {
+	cfg := &configstore.Config{
+		APIURL:      "http://localhost:8080",
+		AccessToken: "tok-test",
+	}
+
+	c := newClient(cfg)
+	if c == nil {
+		t.Fatal("newClient returned nil")
+	}
+}
+
+func TestCheckAuth_ErrorMessages(t *testing.T) {
+	isolate(t)
+
+	_, err := checkAuth()
+	if err == nil {
+		t.Fatal("expected error when not logged in")
+	}
+	if !contains(err.Error(), "not logged in") {
+		t.Errorf("expected 'not logged in' error, got: %v", err)
+	}
+}
+
+func contains(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
