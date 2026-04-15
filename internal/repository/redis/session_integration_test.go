@@ -23,7 +23,7 @@ func testRedis(t *testing.T) *goredis.Client {
 	req := testcontainers.ContainerRequest{
 		Image:        "redis:7-alpine",
 		ExposedPorts: []string{"6379/tcp"},
-		WaitingFor:   wait.ForListeningPort("6379/tcp").WithStartupTimeout(60 * time.Second),
+		WaitingFor:   wait.ForListeningPort("6379/tcp").WithStartupTimeout(120 * time.Second),
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -61,7 +61,6 @@ func testRedis(t *testing.T) *goredis.Client {
 }
 
 func TestStoreAndValidateRefreshToken(t *testing.T) {
-	t.Parallel()
 
 	rdb := testRedis(t)
 	repo := redisrepo.NewSessionRepo(rdb)
@@ -84,7 +83,6 @@ func TestStoreAndValidateRefreshToken(t *testing.T) {
 }
 
 func TestValidateRefreshToken_Unknown(t *testing.T) {
-	t.Parallel()
 
 	rdb := testRedis(t)
 	repo := redisrepo.NewSessionRepo(rdb)
@@ -97,7 +95,6 @@ func TestValidateRefreshToken_Unknown(t *testing.T) {
 }
 
 func TestRevokeRefreshToken(t *testing.T) {
-	t.Parallel()
 
 	rdb := testRedis(t)
 	repo := redisrepo.NewSessionRepo(rdb)
@@ -118,7 +115,6 @@ func TestRevokeRefreshToken(t *testing.T) {
 }
 
 func TestBlocklistJTI(t *testing.T) {
-	t.Parallel()
 
 	rdb := testRedis(t)
 	repo := redisrepo.NewSessionRepo(rdb)
@@ -139,7 +135,6 @@ func TestBlocklistJTI(t *testing.T) {
 }
 
 func TestIsBlocklisted_Unknown(t *testing.T) {
-	t.Parallel()
 
 	rdb := testRedis(t)
 	repo := redisrepo.NewSessionRepo(rdb)
@@ -155,7 +150,6 @@ func TestIsBlocklisted_Unknown(t *testing.T) {
 }
 
 func TestRateLimitAllow_SlidingWindow(t *testing.T) {
-	t.Parallel()
 
 	rdb := testRedis(t)
 	repo := redisrepo.NewSessionRepo(rdb)
@@ -191,7 +185,6 @@ func TestRateLimitAllow_SlidingWindow(t *testing.T) {
 }
 
 func TestRotateRefreshToken(t *testing.T) {
-	t.Parallel()
 
 	rdb := testRedis(t)
 	repo := redisrepo.NewSessionRepo(rdb)
@@ -228,7 +221,6 @@ func TestRotateRefreshToken(t *testing.T) {
 }
 
 func TestRateLimitAllow_FailOpen(t *testing.T) {
-	t.Parallel()
 
 	// Create a client pointing at a non-existent Redis to simulate unavailability.
 	rdb := goredis.NewClient(&goredis.Options{

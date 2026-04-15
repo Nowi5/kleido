@@ -73,7 +73,7 @@ func newE2EEnv(t *testing.T) *e2eEnv {
 			"POSTGRES_PASSWORD": "test",
 			"POSTGRES_DB":       "testdb",
 		},
-		WaitingFor: wait.ForLog("database system is ready to accept connections").WithOccurrence(2),
+		WaitingFor: wait.ForExposedPort("5432").WithStartupTimeout(120 * time.Second),
 	}
 	pgC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: pgReq,
@@ -94,6 +94,24 @@ func newE2EEnv(t *testing.T) *e2eEnv {
 	}
 	dsn := fmt.Sprintf("postgres://test:test@%s:%s/testdb?sslmode=disable", pgHost, pgPort.Port())
 
+	pollCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+PollDB:
+	for pollCtx.Err() == nil {
+		exitCode, _, err := pgC.Exec(pollCtx, []string{"pg_isready", "-U", "test", "-d", "testdb"})
+		if err == nil && exitCode == 0 {
+			break PollDB
+		}
+		select {
+		case <-pollCtx.Done():
+		default:
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+	if pollCtx.Err() != nil {
+		t.Fatalf("pg_isready: database not ready within 30s")
+	}
+
 	if err := repopostgres.RunMigrations(dsn, "../../migrations"); err != nil {
 		t.Fatalf("run migrations: %v", err)
 	}
@@ -108,7 +126,7 @@ func newE2EEnv(t *testing.T) *e2eEnv {
 	redisReq := testcontainers.ContainerRequest{
 		Image:        "redis:7-alpine",
 		ExposedPorts: []string{"6379/tcp"},
-		WaitingFor:   wait.ForLog("Ready to accept connections"),
+		WaitingFor:   wait.ForListeningPort("6379/tcp").WithStartupTimeout(120 * time.Second),
 	}
 	redisC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: redisReq,

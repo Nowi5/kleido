@@ -32,7 +32,7 @@ func testDB(t *testing.T) string {
 			"POSTGRES_PASSWORD": "testpass",
 			"POSTGRES_DB":       "testdb",
 		},
-		WaitingFor: wait.ForLog("database system is ready to accept connections").WithStartupTimeout(60 * time.Second),
+		WaitingFor: wait.ForExposedPort("5432").WithStartupTimeout(120 * time.Second),
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -61,6 +61,24 @@ func testDB(t *testing.T) string {
 
 	dsn := fmt.Sprintf("postgres://testuser:testpass@%s:%s/testdb?sslmode=disable", host, port.Port())
 
+	readyCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+PollDB:
+	for readyCtx.Err() == nil {
+		exitCode, _, err := container.Exec(readyCtx, []string{"pg_isready", "-U", "testuser", "-d", "testdb"})
+		if err == nil && exitCode == 0 {
+			break PollDB
+		}
+		select {
+		case <-readyCtx.Done():
+		default:
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+	if readyCtx.Err() != nil {
+		t.Fatalf("pg_isready: database not ready within 30s")
+	}
+
 	if err := postgres.RunMigrations(dsn, "../../../migrations"); err != nil {
 		t.Fatalf("run migrations: %v", err)
 	}
@@ -84,8 +102,6 @@ func newPool(t *testing.T, dsn string) interface{ Close() } {
 }
 
 func TestCreate_FindByEmail_RoundTrip(t *testing.T) {
-	t.Parallel()
-
 	dsn := testDB(t)
 	ctx := context.Background()
 
@@ -135,8 +151,6 @@ func TestCreate_FindByEmail_RoundTrip(t *testing.T) {
 }
 
 func TestFindByID_NotFound(t *testing.T) {
-	t.Parallel()
-
 	dsn := testDB(t)
 	ctx := context.Background()
 
@@ -165,8 +179,6 @@ func TestFindByID_NotFound(t *testing.T) {
 }
 
 func TestList_TotalCount(t *testing.T) {
-	t.Parallel()
-
 	dsn := testDB(t)
 	ctx := context.Background()
 
@@ -215,8 +227,6 @@ func TestList_TotalCount(t *testing.T) {
 }
 
 func TestDelete_SoftDelete(t *testing.T) {
-	t.Parallel()
-
 	dsn := testDB(t)
 	ctx := context.Background()
 

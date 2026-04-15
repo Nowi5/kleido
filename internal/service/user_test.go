@@ -74,9 +74,14 @@ type mockCacheRepo struct {
 	data            map[string]any
 	deletedKey      string
 	deleteCallCount int
+	deleteErr       error
+	setJSONErr      error
 }
 
 func (m *mockCacheRepo) SetJSON(_ context.Context, key string, v any, _ time.Duration) error {
+	if m.setJSONErr != nil {
+		return m.setJSONErr
+	}
 	if m.data == nil {
 		m.data = map[string]any{}
 	}
@@ -100,7 +105,7 @@ func (m *mockCacheRepo) Delete(_ context.Context, keys ...string) error {
 	if len(keys) > 0 {
 		m.deletedKey = keys[0]
 	}
-	return nil
+	return m.deleteErr
 }
 
 func (m *mockCacheRepo) Exists(_ context.Context, _ string) (bool, error) {
@@ -630,4 +635,64 @@ func (m *mockUserRepoList) UpdatePassword(_ context.Context, _ uuid.UUID, _ stri
 func (m *mockUserRepoList) Delete(_ context.Context, _ uuid.UUID) error                   { return nil }
 func (m *mockUserRepoList) List(_ context.Context, _, _ int) ([]*model.User, int64, error) {
 	return m.users, m.total, m.err
+}
+
+// --- Cache error-path coverage tests ---
+
+func TestGetByID_CacheSetError_FallsThrough(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	user := &model.User{ID: id, Email: "x@x.com", Role: "user", IsActive: true}
+	repo := &mockUserRepo{users: map[uuid.UUID]*model.User{id: user}}
+	cache := &mockCacheRepo{setJSONErr: errors.New("redis write error")}
+	svc := service.NewUserService(repo, cache, nil)
+
+	got, err := svc.GetByID(context.Background(), id)
+	if err != nil {
+		t.Fatalf("GetByID with cache-set error: unexpected error: %v", err)
+	}
+	if got.Email != user.Email {
+		t.Errorf("email: want %q, got %q", user.Email, got.Email)
+	}
+}
+
+func TestDelete_CacheDeleteError_StillSucceeds(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	user := &model.User{ID: id, Email: "d@e.com", Role: "user", IsActive: true}
+	repo := &mockUserRepo{users: map[uuid.UUID]*model.User{id: user}}
+	cache := &mockCacheRepo{deleteErr: errors.New("redis unavailable")}
+	svc := service.NewUserService(repo, cache, nil)
+
+	err := svc.Delete(context.Background(), id)
+	if err != nil {
+		t.Fatalf("Delete with cache-delete error: unexpected error: %v", err)
+	}
+	if cache.deleteCallCount != 1 {
+		t.Errorf("cache.Delete call count: want 1, got %d", cache.deleteCallCount)
+	}
+}
+
+func TestUpdate_CacheDeleteError_StillSucceeds(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	user := &model.User{ID: id, Email: "old@e.com", Role: "user", IsActive: true}
+	repo := &mockUserRepo{users: map[uuid.UUID]*model.User{id: user}}
+	cache := &mockCacheRepo{deleteErr: errors.New("redis unavailable")}
+	svc := service.NewUserService(repo, cache, nil)
+
+	newEmail := "new@e.com"
+	got, err := svc.Update(context.Background(), id, &model.UpdateUserRequest{Email: &newEmail}, "admin")
+	if err != nil {
+		t.Fatalf("Update with cache-delete error: unexpected error: %v", err)
+	}
+	if got.Email != newEmail {
+		t.Errorf("email: want %q, got %q", newEmail, got.Email)
+	}
+	if cache.deleteCallCount != 1 {
+		t.Errorf("cache.Delete call count: want 1, got %d", cache.deleteCallCount)
+	}
 }

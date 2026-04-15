@@ -83,12 +83,14 @@ type mockSessionRepo struct {
 	// lockout state
 	failureCounts       map[string]int64
 	clearFailuresCalled bool
+	clearFailuresErr    error
 	isLockedOutReturn   bool
 	isLockedOutErr      error
 
 	// password reset
-	resetTokens    map[string]string // token → userID
-	consumeResetFn func(token string) (string, error)
+	resetTokens         map[string]string // token → userID
+	consumeResetFn      func(token string) (string, error)
+	storeResetTokenErr  error
 }
 
 func (m *mockSessionRepo) StoreRefreshToken(_ context.Context, token, userID string, _ time.Duration) error {
@@ -156,7 +158,7 @@ func (m *mockSessionRepo) GetLoginFailures(_ context.Context, email string) (int
 
 func (m *mockSessionRepo) ClearLoginFailures(_ context.Context, _ string) error {
 	m.clearFailuresCalled = true
-	return nil
+	return m.clearFailuresErr
 }
 
 func (m *mockSessionRepo) IsLockedOut(_ context.Context, _ string) (bool, error) {
@@ -168,6 +170,9 @@ func (m *mockSessionRepo) RateLimitAllowUser(_ context.Context, _, _ string, lim
 }
 
 func (m *mockSessionRepo) StorePasswordResetToken(_ context.Context, token, userID string) error {
+	if m.storeResetTokenErr != nil {
+		return m.storeResetTokenErr
+	}
 	if m.resetTokens == nil {
 		m.resetTokens = map[string]string{}
 	}
@@ -871,4 +876,50 @@ func (m *mockUserSvcWithOrder) UpdatePassword(_ context.Context, _ uuid.UUID, _ 
 		m.onUpdatePW()
 	}
 	return nil
+}
+
+// --- Error-path coverage tests ---
+
+func TestLogin_ClearFailuresError_StillSucceeds(t *testing.T) {
+	t.Parallel()
+
+	userID := uuid.New()
+	user := &model.User{ID: userID, Email: "u@e.com", PasswordHash: hashPW(t, "correct"), Role: "user"}
+	sessions := &mockSessionRepo{
+		clearFailuresErr: errors.New("redis unavailable"),
+	}
+	svc := newSvc(t, &mockUserSvc{
+		byEmail: map[string]*model.User{"u@e.com": user},
+		byID:    map[uuid.UUID]*model.User{userID: user},
+	}, sessions)
+
+	got, err := svc.Login(context.Background(), "u@e.com", "correct")
+	if err != nil {
+		t.Fatalf("Login with clear-failures error: unexpected error: %v", err)
+	}
+	if got == nil {
+		t.Fatal("expected token pair, got nil")
+	}
+	if !sessions.clearFailuresCalled {
+		t.Error("ClearLoginFailures must have been called")
+	}
+}
+
+func TestForgotPassword_StoreResetTokenError_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	userID := uuid.New()
+	user := &model.User{ID: userID, Email: "u@e.com", Role: "user"}
+	sessions := &mockSessionRepo{
+		storeResetTokenErr: errors.New("redis error"),
+	}
+	svc := newSvc(t, &mockUserSvc{
+		byEmail: map[string]*model.User{"u@e.com": user},
+		byID:    map[uuid.UUID]*model.User{userID: user},
+	}, sessions)
+
+	err := svc.ForgotPassword(context.Background(), "u@e.com")
+	if err == nil {
+		t.Fatal("expected error from ForgotPassword when StorePasswordResetToken fails")
+	}
 }
