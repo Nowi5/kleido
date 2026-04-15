@@ -63,7 +63,6 @@ func TestLogin_InvalidCredentials(t *testing.T) {
 }
 
 func TestLogout_Success(t *testing.T) {
-	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/api/v1/auth/logout" {
 			http.NotFound(w, r)

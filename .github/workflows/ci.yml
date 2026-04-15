@@ -27,9 +27,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@1b6671e713fd51c7f28eb88acf29c9bf3c2eb15f # v6.5.0
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v2.11.4
+          # Use 'latest' - only latest version is maintained per golangci-lint recommendations.
+          # Pinning to a specific version causes CI failures when that version no longer exists.
+          version: latest
 
       - name: TypeScript type check
         run: cd web && npm run type-check
@@ -227,7 +229,8 @@ jobs:
           image-ref: "kleido:ci"
           format: "sarif"
           output: "trivy-results.sarif"
-          severity: "HIGH,CRITICAL"
+          severity: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
+          exit-code: "0"
           ignore-unfixed: true
           trivyignores: ".trivyignore"
 

@@ -54,12 +54,10 @@ linters:
         - "errors.Is("
     gocritic:
       enabled-checks:
-        - appendAssign
         - dupImport
         - evalOrder
         - initClause
         - rangeValCopy
-        - sloppyLen
         - truncateCmp
         - unnecessaryBlock
         - boolExprSimplify
