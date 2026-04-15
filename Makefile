@@ -64,9 +64,10 @@ test-ci:
 
 # test-coverage-check: enforce per-package coverage gates.
 # Fails the build if internal/service/ < 80% or pkg/apperror/ < 90%.
+# Excludes repository packages (integration-only) to avoid 0% dragging down the aggregate.
 test-coverage-check:
 	go test -coverprofile=coverage.out $(TEST_PKGS)
-	@go tool cover -func=coverage.out | awk ' \
+	@go tool cover -func=coverage.out | grep -v 'internal/repository' | awk ' \
 		/^kleido\/internal\/service\// { \
 			pct = $$NF+0; if (pct < 80) { \
 				printf "FAIL internal/service coverage %.1f%% < 80%%\n", pct; exit 1 } } \

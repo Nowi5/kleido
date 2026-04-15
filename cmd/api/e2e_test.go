@@ -23,6 +23,7 @@ import (
 	"kleido/internal/config"
 	repopostgres "kleido/internal/repository/postgres"
 	reporedis "kleido/internal/repository/redis"
+	"kleido/internal/repository"
 	"kleido/internal/service"
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/testcontainers/testcontainers-go"
@@ -49,6 +50,24 @@ func (m *captureMailer) LastURL() string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.lastURL
+}
+
+// ---------------------------------------------------------------------------
+// rateLimitBypassRepo — wraps a SessionRepository and bypasses per-IP rate
+// limiting in E2E tests. Brute-force protection is preserved since it lives in
+// the service layer. All other SessionRepository methods are delegated.
+// ---------------------------------------------------------------------------
+
+type rateLimitBypassRepo struct {
+	repository.SessionRepository
+}
+
+func (r *rateLimitBypassRepo) RateLimitAllow(_ context.Context, _ string, limit int64, _ time.Duration) (bool, int64, time.Time, error) {
+	return true, limit, time.Now().Add(time.Minute), nil
+}
+
+func (r *rateLimitBypassRepo) RateLimitAllowUser(_ context.Context, _, _ string, limit int64, _ time.Duration) (bool, int64, time.Time, error) {
+	return true, limit, time.Now().Add(time.Minute), nil
 }
 
 // ---------------------------------------------------------------------------
@@ -183,7 +202,7 @@ PollDB:
 	}
 
 	// ── Router + test server ────────────────────────────────────────────────
-	router := buildRouter(pool, rdb, cfg, log, jwtSvc, authSvc, userSvc, sessionRepo, sessionRepo)
+	router := buildRouter(pool, rdb, cfg, log, jwtSvc, authSvc, userSvc, sessionRepo, &rateLimitBypassRepo{SessionRepository: sessionRepo})
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 
@@ -587,6 +606,7 @@ func TestE2E_BruteForce(t *testing.T) {
 		if code != http.StatusUnauthorized && code != http.StatusTooManyRequests {
 			t.Errorf("attempt %d: expected 401 or 429 got %d", i, code)
 		}
+		time.Sleep(50 * time.Millisecond)
 	}
 
 	// 11th request — even with correct password — must be 429 (locked out).

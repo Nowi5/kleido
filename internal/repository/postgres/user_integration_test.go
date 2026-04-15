@@ -79,8 +79,24 @@ PollDB:
 		t.Fatalf("pg_isready: database not ready within 30s")
 	}
 
-	if err := postgres.RunMigrations(dsn, "../../../migrations"); err != nil {
-		t.Fatalf("run migrations: %v", err)
+	migCtx, migCancel := context.WithTimeout(ctx, 30*time.Second)
+	defer migCancel()
+	var migErr error
+RetryMigrate:
+	for i := 0; i < 5; i++ {
+		migErr = postgres.RunMigrations(dsn, "../../../migrations")
+		if migErr == nil {
+			break RetryMigrate
+		}
+		select {
+		case <-migCtx.Done():
+			break RetryMigrate
+		default:
+			time.Sleep(time.Duration(1+i) * time.Second)
+		}
+	}
+	if migErr != nil {
+		t.Fatalf("run migrations: %v", migErr)
 	}
 
 	return dsn

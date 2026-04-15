@@ -1,58 +1,10 @@
+version: "2"
+
 run:
   timeout: 5m
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  govet:
-    enable:
-      - shadow
-  gosec:
-    excludes:
-      - G101
-      - G304
-  revive:
-    rules:
-      - name: exported
-      - name: error-return
-      - name: error-naming
-      - name: if-return
-      - name: increment-decrement
-      - name: var-naming
-      - name: package-comments
-  misspell:
-    locale: US
-  wrapcheck:
-    ignoreSigs:
-      - ".Errorf("
-      - "apperror."
-      - "errors.New("
-      - "errors.As("
-      - "errors.Is("
-  gocritic:
-    enabled-checks:
-      - appendAssign
-      - dupImport
-      - evalOrder
-      - initClause
-      - rangeValCopy
-      - sloppyLen
-      - truncateCmp
-      - unnecessaryBlock
-      - boolExprSimplify
-  linters:
-    exclusions-rules:
-      - path: "_test\\.go$"
-        linters:
-          - gosec
-          - wrapcheck
-      - path: "cmd/"
-        linters:
-          - wrapcheck
-
 linters:
-  disable-all: true
+  default: none
   enable:
     - errcheck
     - govet
@@ -73,14 +25,63 @@ linters:
     - prealloc
     - wrapcheck
 
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    govet:
+      enable:
+        - shadow
+    gosec:
+      excludes:
+        - G101
+        - G304
+    revive:
+      rules:
+        - name: exported
+        - name: error-return
+        - name: error-naming
+        - name: if-return
+        - name: increment-decrement
+        - name: var-naming
+        - name: package-comments
+    misspell:
+      locale: US
+    wrapcheck:
+      ignore-sigs:
+        - ".Errorf("
+        - "apperror."
+        - "errors.New("
+        - "errors.As("
+        - "errors.Is("
+    gocritic:
+      enabled-checks:
+        - appendAssign
+        - dupImport
+        - evalOrder
+        - initClause
+        - rangeValCopy
+        - sloppyLen
+        - truncateCmp
+        - unnecessaryBlock
+        - boolExprSimplify
+
+  exclusions:
+    rules:
+      - path: "_test\\.go$"
+        linters:
+          - gosec
+          - wrapcheck
+      - path: "cmd/"
+        linters:
+          - wrapcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    - path: "_test\\.go$"
-      linters:
-        - gosec
-        - wrapcheck
-    - path: "cmd/"
-      linters:
-        - wrapcheck
+  new: false
