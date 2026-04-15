@@ -15,6 +15,14 @@ MIGRATE_URL ?= $(shell grep ^DATABASE_URL .env 2>/dev/null | cut -d= -f2-)
 VERSION     ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS     := -ldflags="-s -w -X main.version=$(VERSION)"
 
+# TEST_PKGS: packages in scope for unit tests.
+# Excludes packages that are either:
+#   - auto-generated (docs, web/components, *_templ.go)
+#   - integration-only and require Docker (internal/repository/postgres, redis)
+#   - third-party code pulled in by npm (web/node_modules)
+TEST_PKGS := $(shell go list ./... | grep -Ev \
+	'/docs$$|/web/node_modules|/web/components$$|/internal/repository/postgres$$|/internal/repository/redis$$')
+
 # ── Build ─────────────────────────────────────────────────────────────────────
 # build runs ui-build and templ-generate first so web/dist/ and *_templ.go files
 # are present before go build embeds them. No manual prerequisite steps needed.
@@ -28,7 +36,7 @@ run:
 
 # ── Test ──────────────────────────────────────────────────────────────────────
 test:
-	go test -race -count=1 ./...
+	go test -race -count=1 $(TEST_PKGS)
 
 test-integration:
 	go test -race -tags=integration -count=1 ./internal/repository/...
@@ -41,7 +49,7 @@ test-e2e: ui-build templ-generate
 	go test -v -race -tags=e2e -count=1 -timeout=10m ./cmd/api/
 
 test-coverage:
-	go test -coverprofile=coverage.out ./...
+	go test -coverprofile=coverage.out $(TEST_PKGS)
 	go tool cover -html=coverage.out -o coverage.html
 	go tool cover -func=coverage.out | tail -1
 	@echo "Open: coverage.html"
@@ -52,17 +60,17 @@ test-coverage:
 test-ci:
 	@mkdir -p reports
 	gotestsum --junitfile reports/unit.xml --format pkgname \
-		-- -race -count=1 -coverprofile=coverage.out -covermode=atomic ./...
+		-- -race -count=1 -coverprofile=coverage.out -covermode=atomic $(TEST_PKGS)
 
 # test-coverage-check: enforce per-package coverage gates.
 # Fails the build if internal/service/ < 80% or pkg/apperror/ < 90%.
 test-coverage-check:
-	go test -coverprofile=coverage.out ./...
+	go test -coverprofile=coverage.out $(TEST_PKGS)
 	@go tool cover -func=coverage.out | awk ' \
-		/^github.com\/nowi5\/kleido\/internal\/service\// { \
+		/^kleido\/internal\/service\// { \
 			pct = $$NF+0; if (pct < 80) { \
 				printf "FAIL internal/service coverage %.1f%% < 80%%\n", pct; exit 1 } } \
-		/^github.com\/nowi5\/kleido\/pkg\/apperror\// { \
+		/^kleido\/pkg\/apperror\// { \
 			pct = $$NF+0; if (pct < 90) { \
 				printf "FAIL pkg/apperror coverage %.1f%% < 90%%\n", pct; exit 1 } }' \
 		&& echo "✓ Coverage gates passed"

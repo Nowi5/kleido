@@ -55,7 +55,7 @@ func AdminUsers(users []*model.UserResponse, total int64, token string) templ.Co
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", total))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/components/admin_users.templ`, Line: 20, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/components/admin_users.templ`, Line: 15, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {

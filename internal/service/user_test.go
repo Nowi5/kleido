@@ -525,6 +525,53 @@ func TestCreate_RepoError(t *testing.T) {
 	}
 }
 
+// --- UpdatePassword tests ---
+
+func TestUpdatePassword_Success(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	user := &model.User{ID: id, Email: "u@example.com", Role: "user", IsActive: true}
+	repo := &mockUserRepo{users: map[uuid.UUID]*model.User{id: user}}
+	cache := &mockCacheRepo{}
+	svc := newUserSvc(repo, cache)
+
+	if err := svc.UpdatePassword(context.Background(), id, "hashed-pw"); err != nil {
+		t.Fatalf("UpdatePassword: %v", err)
+	}
+	// Cache entry must be invalidated after password change.
+	if cache.deleteCallCount != 1 {
+		t.Errorf("cache.Delete call count: want 1, got %d", cache.deleteCallCount)
+	}
+	wantKey := "cache:user:" + id.String()
+	if cache.deletedKey != wantKey {
+		t.Errorf("cache.Delete key: want %q, got %q", wantKey, cache.deletedKey)
+	}
+}
+
+func TestUpdatePassword_RepoError(t *testing.T) {
+	t.Parallel()
+
+	repo := &mockUserRepoUpdatePWErr{err: errors.New("db: update failed")}
+	cache := &mockCacheRepo{}
+	svc := service.NewUserService(repo, cache, nil)
+
+	err := svc.UpdatePassword(context.Background(), uuid.New(), "hashed-pw")
+	if err == nil {
+		t.Fatal("expected error from repo")
+	}
+}
+
+// mockUserRepoUpdatePWErr returns an error from UpdatePassword.
+type mockUserRepoUpdatePWErr struct {
+	mockUserRepo
+	err error
+}
+
+func (m *mockUserRepoUpdatePWErr) UpdatePassword(_ context.Context, _ uuid.UUID, _ string) error {
+	return m.err
+}
+
 // --- List tests ---
 
 func TestList_Success(t *testing.T) {

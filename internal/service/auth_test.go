@@ -675,6 +675,62 @@ func TestLogin_AuditEvents_Success(t *testing.T) {
 	}
 }
 
+// TestLogin_LockoutCheckError verifies that a Redis failure during the lockout
+// check does not block login — the check is non-fatal and execution continues.
+func TestLogin_LockoutCheckError(t *testing.T) {
+	t.Parallel()
+
+	userID := uuid.New()
+	pw := "Password1!"
+	user := &model.User{ID: userID, Email: "a@b.com", PasswordHash: hashPW(t, pw), Role: "user", IsActive: true}
+
+	sessions := &mockSessionRepo{
+		isLockedOutErr: errors.New("redis timeout"),
+		stored:         map[string]string{},
+	}
+	jwtSvc := newTestJWTSvc(t)
+	userSvc := &mockUserSvc{
+		byEmail: map[string]*model.User{"a@b.com": user},
+		byID:    map[uuid.UUID]*model.User{userID: user},
+	}
+	svc := service.NewAuthService(userSvc, sessions, jwtSvc, nil, nil, "")
+
+	// Login must succeed despite the lockout check error.
+	pair, err := svc.Login(context.Background(), "a@b.com", pw)
+	if err != nil {
+		t.Fatalf("Login should succeed when lockout check errors: %v", err)
+	}
+	if pair.AccessToken == "" {
+		t.Error("expected a non-empty access token")
+	}
+}
+
+// TestForgotPassword_StoreTokenError verifies that a storage failure for the
+// reset token is surfaced as an error (unlike the unknown-email case).
+func TestForgotPassword_StoreTokenError(t *testing.T) {
+	t.Parallel()
+
+	userID := uuid.New()
+	user := &model.User{ID: userID, Email: "user@example.com", Role: "user"}
+	sessions := &mockSessionRepoStoreResetErr{err: errors.New("redis down")}
+	jwtSvc := newTestJWTSvc(t)
+	userSvc := &mockUserSvc{byEmail: map[string]*model.User{"user@example.com": user}}
+	svc := service.NewAuthService(userSvc, sessions, jwtSvc, nil, nil, "http://localhost")
+
+	if err := svc.ForgotPassword(context.Background(), "user@example.com"); err == nil {
+		t.Fatal("expected error when StorePasswordResetToken fails")
+	}
+}
+
+type mockSessionRepoStoreResetErr struct {
+	mockSessionRepo
+	err error
+}
+
+func (m *mockSessionRepoStoreResetErr) StorePasswordResetToken(_ context.Context, _, _ string) error {
+	return m.err
+}
+
 // --- Password reset tests ---
 
 func TestForgotPassword_KnownEmail_StoresToken(t *testing.T) {

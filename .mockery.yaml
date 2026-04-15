@@ -1,6 +1,6 @@
 version: "2"
 packages:
-  github.com/nowi5/kleido/internal/repository:
+  kleido/internal/repository:
     config:
       dir: "internal/mocks/repository"
       outpkg: "mockrepo"
@@ -10,7 +10,7 @@ packages:
       SessionRepository:
       CacheRepository:
 
-  github.com/nowi5/kleido/internal/service:
+  kleido/internal/service:
     config:
       dir: "internal/mocks/service"
       outpkg: "mocksvc"
@@ -19,7 +19,7 @@ packages:
       UserService:
       AuthService:
 
-  github.com/nowi5/kleido/internal/middleware:
+  kleido/internal/middleware:
     config:
       dir: "internal/mocks/middleware"
       outpkg: "mockmw"
